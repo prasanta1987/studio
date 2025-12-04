@@ -11,9 +11,9 @@ export type PianoKey = {
 const NOTE_NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
 
 const KEY_RANGES: Record<KeyCount, { start: number, count: number }> = {
-    88: { start: 21, count: 88 }, // A0 to C8
-    61: { start: 36, count: 61 },   // C2 to C7
-    37: { start: 48, count: 37 },   // C3 to C6
+    88: { start: 24, count: 88 }, // C1 to C9
+    61: { start: 36, count: 61 }, // C2 to C7
+    37: { start: 48, count: 37 }, // C3 to C6
 };
 
 export const getPianoKeys = (keyCount: KeyCount): PianoKey[] => {
@@ -22,6 +22,8 @@ export const getPianoKeys = (keyCount: KeyCount): PianoKey[] => {
 
   for (let i = 0; i < count; i++) {
     const midi = startMidi + i;
+    if (keyCount === 88 && midi > 108) continue; // standard 88 keys end at C8 (108)
+    
     const noteIndex = midi % 12;
     const noteName = NOTE_NAMES[noteIndex];
     const octave = Math.floor(midi / 12) - 1;
