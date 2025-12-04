@@ -1,12 +1,10 @@
+
 import * as Tone from 'tone';
 
 let synth: Tone.PolySynth<any> | Tone.PluckSynth | null = null;
 let volume: Tone.Volume | null = null;
 let rhythmSeq: Tone.Sequence | null = null;
 let playbackPart: Tone.Part | null = null;
-let isSustainOn = false;
-const sustainedNotes = new Set<number>();
-
 
 const instruments = {
     default: Tone.Synth,
@@ -58,20 +56,14 @@ export function playNote(note: number, velocity: number) {
     } else if (synth instanceof Tone.PolySynth) {
       synth?.triggerAttack(freq, Tone.now(), vel);
     }
-    sustainedNotes.delete(note);
 }
 
 export function releaseNote(note: number) {
     if (!synth) return;
-    if (isSustainOn) {
-        sustainedNotes.add(note);
-        return;
-    }
     const freq = Tone.Frequency(note, 'midi');
     if (synth instanceof Tone.PolySynth) {
         synth?.triggerRelease(freq, Tone.now());
     }
-    // PluckSynth and MembraneSynth don't have triggerRelease for single notes
 }
 
 export function setInstrument(instrumentName: string) {
@@ -91,37 +83,21 @@ export function setInstrument(instrumentName: string) {
         return;
     }
 
-    // Special handling for synths that are not monophonic and not suitable for PolySynth
     if (instrumentName === 'pluck') {
         synth = new Tone.PluckSynth().connect(volume);
     } else if (instrumentName === 'membrane') {
-        // MembraneSynth is monophonic but often used for one-shots like kicks.
-        // Using it in PolySynth can be tricky. For simplicity, we'll wrap it.
-        // It won't be polyphonic this way, but it will work.
         synth = new Tone.PolySynth(Tone.MembraneSynth).connect(volume);
     } 
     else {
-        // For standard monophonic synths
         synth = new Tone.PolySynth(instrumentConstructor).connect(volume);
     }
 }
 
-export function setSustain(isOn: boolean) {
-    isSustainOn = isOn;
-    if (!isOn) {
-        releaseAllSustained();
+export function setSustainDuration(duration: number) {
+    if (synth && 'set' in synth && typeof (synth as any).set === 'function') {
+        (synth as any).set({ "envelope": { "release": duration } });
     }
 }
-
-export function releaseAllSustained() {
-    if (!synth || !(synth instanceof Tone.PolySynth)) return;
-    const notesToRelease = Array.from(sustainedNotes).map(note => Tone.Frequency(note, 'midi').toNote());
-    if (notesToRelease.length > 0) {
-        synth.triggerRelease(notesToRelease, Tone.now());
-    }
-    sustainedNotes.clear();
-}
-
 
 export function setVolume(value: number) {
     if (!volume) return;
@@ -146,7 +122,6 @@ export function playRhythm(rhythmName: string) {
         rhythmSeq.start(0);
         Tone.Transport.start();
     } else {
-        // If "none" or another pattern stops the transport, ensure it doesn't stop recordings
         if (Tone.Transport.state === 'started' && playbackPart === null) {
             // only stop if not playing a recording
         }
@@ -159,7 +134,6 @@ export function stopRhythm() {
         rhythmSeq.dispose();
         rhythmSeq = null;
     }
-    // Only stop transport if nothing else is using it (like recording/playback)
     if (Tone.Transport.schedule.length === 0) {
         Tone.Transport.stop();
     }
@@ -172,7 +146,6 @@ export function playRecording(events: {note: number; time: number; duration: num
     if (!synth) return;
 
     playbackPart = new Tone.Part((time, value) => {
-        // PluckSynth doesn't have duration
         if (synth instanceof Tone.PluckSynth) {
              synth?.triggerAttack(Tone.Frequency(value.note, 'midi'), time);
         } else if (synth instanceof Tone.PolySynth) {
@@ -183,7 +156,6 @@ export function playRecording(events: {note: number; time: number; duration: num
     playbackPart.loop = false;
     Tone.Transport.start();
 
-    // Schedule stop
     const totalDuration = events.reduce((max, e) => Math.max(max, e.time + e.duration), 0);
     Tone.Transport.scheduleOnce(() => {
         stopPlaying();
@@ -199,7 +171,6 @@ export function stopPlaying() {
         playbackPart.dispose();
         playbackPart = null;
     }
-    // Release any stuck notes
     if (synth instanceof Tone.PolySynth) {
         synth?.releaseAll();
     }

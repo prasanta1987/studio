@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -24,12 +25,11 @@ interface MainControlsProps {
   onRhythmChange: (value: string) => void;
   rhythms: { value: string; label: string }[];
   onVolumeChange: (value: number[]) => void;
+  onSustainChange: (value: number[]) => void;
   isRecording: boolean;
   isPlaying: boolean;
   onRecord: () => void;
   onPlay: () => void;
-  isSustainOn: boolean;
-  onSustainToggle: () => void;
   disabled?: boolean;
 }
 
@@ -41,12 +41,11 @@ export default function MainControls({
   onRhythmChange,
   rhythms,
   onVolumeChange,
+  onSustainChange,
   isRecording,
   isPlaying,
   onRecord,
   onPlay,
-  isSustainOn,
-  onSustainToggle,
   disabled = false,
 }: MainControlsProps) {
   return (
@@ -130,23 +129,23 @@ export default function MainControls({
             <Separator orientation="vertical" className="h-8 hidden md:block" />
 
             {/* Sustain Control */}
-             <div className="flex items-center gap-2">
+             <div className="flex items-center gap-3 w-full max-w-[150px]">
                 <Tooltip>
                     <TooltipTrigger asChild>
-                    <Button
-                        variant={isSustainOn ? "default" : "outline"}
-                        size="icon"
-                        onClick={onSustainToggle}
-                        aria-label={isSustainOn ? "Turn Sustain Off" : "Turn Sustain On"}
-                        disabled={disabled}
-                    >
                         <Waves />
-                    </Button>
                     </TooltipTrigger>
                     <TooltipContent>
-                    <p>{isSustainOn ? "Sustain Off" : "Sustain On"}</p>
+                        <p>Sustain</p>
                     </TooltipContent>
                 </Tooltip>
+                <Slider
+                    defaultValue={[0.1]}
+                    max={2}
+                    step={0.1}
+                    onValueChange={onSustainChange}
+                    aria-label="Sustain"
+                    disabled={disabled}
+                />
              </div>
 
             {/* Volume Control */}
