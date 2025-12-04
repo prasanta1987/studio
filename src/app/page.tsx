@@ -10,7 +10,7 @@ import PianoKeyboard from '@/components/piano/PianoKeyboard';
 import MainControls from '@/components/controls/MainControls';
 import { Logo } from '@/components/Logo';
 import { useToast } from '@/hooks/use-toast';
-import { getPianoKeys, NOTE_NAMES } from '@/lib/notes';
+import { getPianoKeys, NOTE_NAMES, KEY_RANGES } from '@/lib/notes';
 import { getScaleNotes, Scale } from '@/lib/scales';
 import { Usb } from 'lucide-react';
 
@@ -39,9 +39,13 @@ export default function Home() {
   const { toast } = useToast();
 
   const PIANO_KEYS = getPianoKeys(keyCount);
+  const rootNoteMidi = NOTE_NAMES.indexOf(scaleRoot) + KEY_RANGES[keyCount].start;
 
   useEffect(() => {
-    const rootNoteMidi = NOTE_NAMES.indexOf(scaleRoot) + (keyCount === 88 ? 24 : 36);
+    const rootNoteIndex = NOTE_NAMES.indexOf(scaleRoot);
+    const firstC = Math.ceil(KEY_RANGES[keyCount].start / 12) * 12;
+    const rootNoteMidi = firstC + rootNoteIndex;
+    
     const scaleNotes = getScaleNotes(rootNoteMidi, scaleType, keyCount);
     setHighlightedKeys(scaleNotes);
   }, [scaleRoot, scaleType, keyCount]);
@@ -142,7 +146,7 @@ export default function Home() {
     if (isRecording) {
       setIsRecording(false);
       // Don't stop transport if a rhythm is playing
-      if (rhythm === 'none') {
+      if (rhythm === 'none' && !isPlaying) {
         Tone.Transport.stop();
       }
       toast({
@@ -232,6 +236,8 @@ a.href = url;
     const key = PIANO_KEYS.find(k => k.midi === midi);
     return key ? key.note : '';
   };
+  
+  const rootNoteIndex = NOTE_NAMES.indexOf(scaleRoot);
 
   return (
     <div className="flex flex-col h-screen bg-background text-foreground overflow-hidden">
@@ -280,6 +286,7 @@ a.href = url;
               keyCount={keyCount}
               pressedKeys={pressedKeys}
               highlightedKeys={highlightedKeys}
+              rootNoteIndex={rootNoteIndex}
               onNoteOn={onNoteOn}
               onNoteOff={onNoteOff}
             />

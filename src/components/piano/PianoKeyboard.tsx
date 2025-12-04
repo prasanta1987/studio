@@ -10,6 +10,7 @@ interface PianoKeyboardProps {
   keyCount: KeyCount;
   pressedKeys: Set<number>;
   highlightedKeys: number[];
+  rootNoteIndex: number;
   onNoteOn: (note: number, velocity?: number) => void;
   onNoteOff: (note: number) => void;
 }
@@ -18,6 +19,7 @@ const Key = memo(({
   pianoKey,
   isPressed,
   isHighlighted,
+  isRoot,
   onNoteOn,
   onNoteOff,
   isBlack,
@@ -27,6 +29,7 @@ const Key = memo(({
   pianoKey: PianoKey;
   isPressed: boolean;
   isHighlighted: boolean;
+  isRoot: boolean;
   onNoteOn: (note: number, velocity?: number) => void;
   onNoteOff: (note: number) => void;
   isBlack: boolean;
@@ -57,7 +60,7 @@ const Key = memo(({
 
   const handleTouchEnd = (e: React.TouchEvent) => {
     e.preventDefault();
-    onNoteOff(pianoKeymidi);
+    onNoteOff(pianoKey.midi);
   };
 
   const keyClasses = cn(
@@ -65,7 +68,8 @@ const Key = memo(({
     isBlack
       ? 'w-[55%] h-[60%] bg-gray-800 border-gray-900 z-10 hover:bg-gray-700'
       : 'w-full h-full bg-white border-gray-200',
-    isHighlighted && !isPressed && 'border-sky-500',
+    isRoot && !isPressed && 'border-accent',
+    isHighlighted && !isRoot && !isPressed && 'border-sky-500',
     isPressed && (isBlack ? '!bg-accent border-accent-dark' : '!bg-orange-200 border-accent'),
     !isBlack && 'border-l border-r'
   );
@@ -100,7 +104,7 @@ const Key = memo(({
 Key.displayName = 'Key';
 
 
-export default function PianoKeyboard({ keyCount, pressedKeys, highlightedKeys, onNoteOn, onNoteOff }: PianoKeyboardProps) {
+export default function PianoKeyboard({ keyCount, pressedKeys, highlightedKeys, rootNoteIndex, onNoteOn, onNoteOff }: PianoKeyboardProps) {
     const pianoKeys = getPianoKeys(keyCount);
     const whiteKeys = pianoKeys.filter(key => key.type === 'white');
 
@@ -122,12 +126,15 @@ export default function PianoKeyboard({ keyCount, pressedKeys, highlightedKeys, 
                 whiteKeyIndex = whiteKeys.findIndex(wk => wk.midi === key.midi);
             }
             
+            const isRoot = highlightedKeys.includes(key.midi) && (key.midi % 12 === rootNoteIndex);
+
             return (
                 <Key
                     key={key.midi}
                     pianoKey={key}
                     isPressed={pressedKeys.has(key.midi)}
                     isHighlighted={highlightedKeys.includes(key.midi)}
+                    isRoot={isRoot}
                     onNoteOn={onNoteOn}
                     onNoteOff={onNoteOff}
                     isBlack={isBlack}
