@@ -10,7 +10,8 @@ import PianoKeyboard from '@/components/piano/PianoKeyboard';
 import MainControls from '@/components/controls/MainControls';
 import { Logo } from '@/components/Logo';
 import { useToast } from '@/hooks/use-toast';
-import { getPianoKeys } from '@/lib/notes';
+import { getPianoKeys, NOTE_NAMES } from '@/lib/notes';
+import { getScaleNotes, Scale } from '@/lib/scales';
 import { Usb } from 'lucide-react';
 
 type RecordingEvent = {
@@ -30,11 +31,20 @@ export default function Home() {
   const [isPlaying, setIsPlaying] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
   const [keyCount, setKeyCount] = useState<KeyCount>(88);
+  const [scaleRoot, setScaleRoot] = useState<string>('C');
+  const [scaleType, setScaleType] = useState<Scale>('major');
+  const [highlightedKeys, setHighlightedKeys] = useState<number[]>([]);
   const recording = useRef<RecordingEvent[]>([]);
   const notesOn = useRef<Map<number, { time: number, velocity: number }>>(new Map());
   const { toast } = useToast();
 
   const PIANO_KEYS = getPianoKeys(keyCount);
+
+  useEffect(() => {
+    const rootNoteMidi = NOTE_NAMES.indexOf(scaleRoot) + (keyCount === 88 ? 24 : 36);
+    const scaleNotes = getScaleNotes(rootNoteMidi, scaleType, keyCount);
+    setHighlightedKeys(scaleNotes);
+  }, [scaleRoot, scaleType, keyCount]);
 
   const onNoteOn = useCallback((note: number, velocity: number) => {
     if (!isInitialized) return;
@@ -109,6 +119,14 @@ export default function Home() {
 
   const handleKeyCountChange = (value: string) => {
     setKeyCount(parseInt(value, 10) as KeyCount);
+  };
+
+  const handleScaleRootChange = (value: string) => {
+    setScaleRoot(value);
+  };
+
+  const handleScaleTypeChange = (value: Scale) => {
+    setScaleType(value);
   };
   
   const handleRecord = () => {
@@ -199,7 +217,7 @@ export default function Home() {
     const blob = new Blob([midiData], { type: 'audio/midi' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
-    a.href = url;
+a.href = url;
     a.download = 'virtuoso-keys-recording.mid';
     a.click();
     URL.revokeObjectURL(url);
@@ -252,11 +270,16 @@ export default function Home() {
             disabled={!isInitialized}
             keyCount={keyCount}
             onKeyCountChange={handleKeyCountChange}
+            scaleRoot={scaleRoot}
+            onScaleRootChange={handleScaleRootChange}
+            scaleType={scaleType}
+            onScaleTypeChange={handleScaleTypeChange}
           />
           <div className="mt-6 w-full relative" style={{aspectRatio: '5 / 1'}}>
             <PianoKeyboard
               keyCount={keyCount}
               pressedKeys={pressedKeys}
+              highlightedKeys={highlightedKeys}
               onNoteOn={onNoteOn}
               onNoteOff={onNoteOff}
             />

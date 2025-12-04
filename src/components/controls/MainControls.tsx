@@ -17,6 +17,8 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import type { KeyCount } from "@/app/page";
+import { NOTE_NAMES } from "@/lib/notes";
+import { scaleTypes, Scale } from "@/lib/scales";
 
 
 interface MainControlsProps {
@@ -36,6 +38,10 @@ interface MainControlsProps {
   disabled?: boolean;
   keyCount: KeyCount;
   onKeyCountChange: (value: string) => void;
+  scaleRoot: string;
+  onScaleRootChange: (value: string) => void;
+  scaleType: Scale;
+  onScaleTypeChange: (value: Scale) => void;
 }
 
 const keyCountOptions: { value: KeyCount, label: string }[] = [
@@ -61,6 +67,10 @@ export default function MainControls({
   disabled = false,
   keyCount,
   onKeyCountChange,
+  scaleRoot,
+  onScaleRootChange,
+  scaleType,
+  onScaleTypeChange,
 }: MainControlsProps) {
   return (
     <Card className="w-full shadow-lg">
@@ -118,6 +128,37 @@ export default function MainControls({
               </Select>
             </div>
             
+            <Separator orientation="vertical" className="h-8 hidden md:block" />
+
+            {/* Scale Selector */}
+            <div className="flex items-center gap-2">
+                <Select value={scaleRoot} onValueChange={onScaleRootChange} disabled={disabled}>
+                    <SelectTrigger className="w-[90px]">
+                        <SelectValue placeholder="Root" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        {NOTE_NAMES.map((note) => (
+                            <SelectItem key={note} value={note}>
+                                {note}
+                            </SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
+                <Select value={scaleType} onValueChange={onScaleTypeChange} disabled={disabled}>
+                    <SelectTrigger className="w-[120px]">
+                        <SelectValue placeholder="Scale" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        {scaleTypes.map((type) => (
+                            <SelectItem key={type} value={type}>
+                                {type.charAt(0).toUpperCase() + type.slice(1)}
+                            </SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
+            </div>
+
+
             <Separator orientation="vertical" className="h-8 hidden md:block" />
 
             {/* Recording Controls */}
