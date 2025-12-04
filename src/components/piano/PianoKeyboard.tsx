@@ -57,7 +57,7 @@ const Key = memo(({
 
   const handleTouchEnd = (e: React.TouchEvent) => {
     e.preventDefault();
-    onNoteOff(pianoKey.midi);
+    onNoteOff(pianoKeymidi);
   };
 
   const keyClasses = cn(
@@ -65,8 +65,8 @@ const Key = memo(({
     isBlack
       ? 'w-[55%] h-[60%] bg-gray-800 border-gray-900 z-10 hover:bg-gray-700'
       : 'w-full h-full bg-white border-gray-200',
-    isHighlighted && !isPressed && (isBlack ? 'bg-sky-700' : 'bg-sky-200'),
-    isPressed && (isBlack ? '!bg-accent' : '!bg-orange-200 border-accent'),
+    isHighlighted && !isPressed && 'border-sky-500',
+    isPressed && (isBlack ? '!bg-accent border-accent-dark' : '!bg-orange-200 border-accent'),
     !isBlack && 'border-l border-r'
   );
 
