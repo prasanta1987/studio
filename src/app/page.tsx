@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import * as Tone from 'tone';
 import { useMidi } from '@/hooks/useMidi';
-import { initSynth, playNote, releaseNote, setInstrument, setVolume, playRhythm, stopRhythm, getInstruments, getRhythms, playRecording, stopPlaying, getNoteTime, getNoteDuration } from '@/lib/synth';
+import { initSynth, playNote, releaseNote, setInstrument, setVolume, playRhythm, stopRhythm, getInstruments, getRhythms, playRecording, stopPlaying, setSustain, releaseAllSustained } from '@/lib/synth';
 import PianoKeyboard from '@/components/piano/PianoKeyboard';
 import MainControls from '@/components/controls/MainControls';
 import { Logo } from '@/components/Logo';
@@ -24,6 +24,7 @@ export default function Home() {
   const [isRecording, setIsRecording] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
+  const [isSustain, setIsSustain] = useState(false);
   const recording = useRef<RecordingEvent[]>([]);
   const notesOn = useRef<Map<number, number>>(new Map());
   const { toast } = useToast();
@@ -149,6 +150,15 @@ export default function Home() {
       playRecording(recording.current, () => setIsPlaying(false));
     }
   };
+  
+  const handleSustainToggle = () => {
+    const newSustainState = !isSustain;
+    setIsSustain(newSustainState);
+    setSustain(newSustainState);
+    if (!newSustainState) {
+        releaseAllSustained();
+    }
+  };
 
   const getNoteName = (midi: number) => {
     const key = PIANO_KEYS.find(k => k.midi === midi);
@@ -187,6 +197,8 @@ export default function Home() {
             isPlaying={isPlaying}
             onRecord={handleRecord}
             onPlay={handlePlay}
+            isSustainOn={isSustain}
+            onSustainToggle={handleSustainToggle}
             disabled={!isInitialized}
           />
           <div className="mt-6 w-full relative" style={{aspectRatio: '5 / 1'}}>

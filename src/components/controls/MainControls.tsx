@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { Volume2, Music, Drum, Circle, Play, Square, Pause } from "lucide-react"
+import { Volume2, Music, Drum, Circle, Play, Square, Pause, Waves } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -28,6 +28,8 @@ interface MainControlsProps {
   isPlaying: boolean;
   onRecord: () => void;
   onPlay: () => void;
+  isSustainOn: boolean;
+  onSustainToggle: () => void;
   disabled?: boolean;
 }
 
@@ -43,6 +45,8 @@ export default function MainControls({
   isPlaying,
   onRecord,
   onPlay,
+  isSustainOn,
+  onSustainToggle,
   disabled = false,
 }: MainControlsProps) {
   return (
@@ -124,6 +128,26 @@ export default function MainControls({
             </div>
 
             <Separator orientation="vertical" className="h-8 hidden md:block" />
+
+            {/* Sustain Control */}
+             <div className="flex items-center gap-2">
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                    <Button
+                        variant={isSustainOn ? "default" : "outline"}
+                        size="icon"
+                        onClick={onSustainToggle}
+                        aria-label={isSustainOn ? "Turn Sustain Off" : "Turn Sustain On"}
+                        disabled={disabled}
+                    >
+                        <Waves />
+                    </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                    <p>{isSustainOn ? "Sustain Off" : "Sustain On"}</p>
+                    </TooltipContent>
+                </Tooltip>
+             </div>
 
             {/* Volume Control */}
             <div className="flex items-center gap-3 w-full max-w-[150px]">

@@ -4,6 +4,9 @@ let synth: Tone.PolySynth<any> | Tone.PluckSynth | null = null;
 let volume: Tone.Volume | null = null;
 let rhythmSeq: Tone.Sequence | null = null;
 let playbackPart: Tone.Part | null = null;
+let isSustainOn = false;
+const sustainedNotes = new Set<number>();
+
 
 const instruments = {
     default: Tone.Synth,
@@ -55,10 +58,15 @@ export function playNote(note: number, velocity: number) {
     } else if (synth instanceof Tone.PolySynth) {
       synth?.triggerAttack(freq, Tone.now(), vel);
     }
+    sustainedNotes.delete(note);
 }
 
 export function releaseNote(note: number) {
     if (!synth) return;
+    if (isSustainOn) {
+        sustainedNotes.add(note);
+        return;
+    }
     const freq = Tone.Frequency(note, 'midi');
     if (synth instanceof Tone.PolySynth) {
         synth?.triggerRelease(freq, Tone.now());
@@ -97,6 +105,23 @@ export function setInstrument(instrumentName: string) {
         synth = new Tone.PolySynth(instrumentConstructor).connect(volume);
     }
 }
+
+export function setSustain(isOn: boolean) {
+    isSustainOn = isOn;
+    if (!isOn) {
+        releaseAllSustained();
+    }
+}
+
+export function releaseAllSustained() {
+    if (!synth || !(synth instanceof Tone.PolySynth)) return;
+    const notesToRelease = Array.from(sustainedNotes).map(note => Tone.Frequency(note, 'midi').toNote());
+    if (notesToRelease.length > 0) {
+        synth.triggerRelease(notesToRelease, Tone.now());
+    }
+    sustainedNotes.clear();
+}
+
 
 export function setVolume(value: number) {
     if (!volume) return;
@@ -182,5 +207,3 @@ export function stopPlaying() {
 
 export const getInstruments = () => Object.keys(instruments).map(key => ({ value: key, label: key.charAt(0).toUpperCase() + key.slice(1) }));
 export const getRhythms = () => Object.keys(rhythms).map(key => ({ value: key, label: key.charAt(0).toUpperCase() + key.slice(1).replace(/([A-Z])/g, ' $1').trim() }));
-export const getNoteTime = (note: number) => Tone.Transport.now();
-export const getNoteDuration = (startTime: number) => Tone.Transport.now() - startTime;
