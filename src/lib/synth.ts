@@ -1,6 +1,6 @@
 import * as Tone from 'tone';
 
-let synth: Tone.PolySynth<any> | null = null;
+let synth: Tone.PolySynth<any> | Tone.PluckSynth | null = null;
 let volume: Tone.Volume | null = null;
 let rhythmSeq: Tone.Sequence | null = null;
 let playbackPart: Tone.Part | null = null;
@@ -15,19 +15,28 @@ const instruments = {
 
 const rhythms = {
     none: null,
-    fourOnFloor: (kick: Tone.MembraneSynth, hihat: Tone.MetalSynth) => {
-        return new Tone.Sequence((time, note) => {
-            if (note === 'C2') kick.triggerAttackRelease(note, '8n', time);
-            if (note === 'G2') hihat.triggerAttackRelease('16n', time, 0.5);
-        }, ['C2', 'G2', 'G2', 'G2', 'C2', 'G2', 'G2', 'G2'], '4n');
-    },
-    techno: (kick: Tone.MembraneSynth, hihat: Tone.MetalSynth) => {
-        return new Tone.Sequence((time, note) => {
-            if (note === 'C2') kick.triggerAttackRelease('C1', '8n', time);
-            if (note === 'G2') hihat.triggerAttackRelease('32n', time, 0.8);
-        }, ['C2', null, 'G2', null, 'C2', null, 'G2', null], '8n');
-    }
-}
+    fourOnTheFloor: (kick: Tone.MembraneSynth, hihat: Tone.MetalSynth) => new Tone.Sequence((time, note) => {
+        if (note.kick) kick.triggerAttackRelease('C1', '8n', time);
+        if (note.hihat) hihat.triggerAttackRelease('C6', '16n', time);
+    }, [
+        { kick: true, hihat: true }, { hihat: true }, { kick: true, hihat: true }, { hihat: true },
+        { kick: true, hihat: true }, { hihat: true }, { kick: true, hihat: true }, { hihat: true }
+    ], '4n'),
+    popRock: (kick: Tone.MembraneSynth, hihat: Tone.MetalSynth) => new Tone.Sequence((time, note) => {
+        if (note.kick) kick.triggerAttackRelease('C1', '8n', time);
+        if (note.hihat) hihat.triggerAttackRelease('C6', '16n', time);
+    }, [
+        { kick: true, hihat: true }, { hihat: true }, { kick: true, hihat: true }, { hihat: true },
+        { kick: true, hihat: true }, { hihat: true }, { kick: true, hihat: true }, { hihat: true }
+    ], '8n'),
+    bossaNova: (kick: Tone.MembraneSynth, hihat: Tone.MetalSynth) => new Tone.Sequence((time, note) => {
+        if (note.kick) kick.triggerAttackRelease('C1', '8n', time);
+        if (note.hihat) hihat.triggerAttackRelease('C6', '16n', time);
+    }, [
+        { kick: true, hihat: true }, { hihat: true }, { hihat: true }, { kick: true, hihat: true },
+        { hihat: true }, { hihat: true }, { kick: true, hihat: true }, { hihat: true }
+    ], '8n'),
+};
 
 export function initSynth() {
     if (!synth) {
@@ -41,28 +50,51 @@ export function playNote(note: number, velocity: number) {
     if (!synth) initSynth();
     const freq = Tone.Frequency(note, 'midi');
     const vel = velocity / 127;
-    synth?.triggerAttack(freq, Tone.now(), vel);
+    if (synth instanceof Tone.PluckSynth) {
+      synth.triggerAttack(freq, Tone.now());
+    } else if (synth instanceof Tone.PolySynth) {
+      synth?.triggerAttack(freq, Tone.now(), vel);
+    }
 }
 
 export function releaseNote(note: number) {
     if (!synth) return;
     const freq = Tone.Frequency(note, 'midi');
-    synth?.triggerRelease(freq, Tone.now());
+    if (synth instanceof Tone.PolySynth) {
+        synth?.triggerRelease(freq, Tone.now());
+    }
+    // PluckSynth and MembraneSynth don't have triggerRelease for single notes
 }
 
 export function setInstrument(instrumentName: string) {
-    if (!synth || !(instrumentName in instruments)) return;
+    if (!volume) {
+        volume = new Tone.Volume(-6).toDestination();
+    }
     
-    // Dispose old synth voices
-    synth.dispose();
+    if (synth) {
+        synth.dispose();
+    }
 
-    // Create a new synth with the selected instrument type
     const instrumentConstructor = instruments[instrumentName as keyof typeof instruments];
-    if (instrumentConstructor) {
-        synth = new Tone.PolySynth(instrumentConstructor);
-        if(volume) {
-            synth.connect(volume);
-        }
+    
+    if (!instrumentConstructor) {
+        // Fallback to default if instrument not found
+        synth = new Tone.PolySynth(Tone.Synth).connect(volume);
+        return;
+    }
+
+    // Special handling for synths that are not monophonic and not suitable for PolySynth
+    if (instrumentName === 'pluck') {
+        synth = new Tone.PluckSynth().connect(volume);
+    } else if (instrumentName === 'membrane') {
+        // MembraneSynth is monophonic but often used for one-shots like kicks.
+        // Using it in PolySynth can be tricky. For simplicity, we'll wrap it.
+        // It won't be polyphonic this way, but it will work.
+        synth = new Tone.PolySynth(Tone.MembraneSynth).connect(volume);
+    } 
+    else {
+        // For standard monophonic synths
+        synth = new Tone.PolySynth(instrumentConstructor).connect(volume);
     }
 }
 
@@ -115,7 +147,12 @@ export function playRecording(events: {note: number; time: number; duration: num
     if (!synth) return;
 
     playbackPart = new Tone.Part((time, value) => {
-        synth?.triggerAttackRelease(Tone.Frequency(value.note, 'midi'), value.duration, time);
+        // PluckSynth doesn't have duration
+        if (synth instanceof Tone.PluckSynth) {
+             synth?.triggerAttack(Tone.Frequency(value.note, 'midi'), time);
+        } else if (synth instanceof Tone.PolySynth) {
+            synth?.triggerAttackRelease(Tone.Frequency(value.note, 'midi'), value.duration, time);
+        }
     }, events.map(e => ({...e, note: e.note}))).start(0);
 
     playbackPart.loop = false;
@@ -138,7 +175,9 @@ export function stopPlaying() {
         playbackPart = null;
     }
     // Release any stuck notes
-    synth?.releaseAll();
+    if (synth instanceof Tone.PolySynth) {
+        synth?.releaseAll();
+    }
 }
 
 export const getInstruments = () => Object.keys(instruments).map(key => ({ value: key, label: key.charAt(0).toUpperCase() + key.slice(1) }));
