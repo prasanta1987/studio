@@ -1,16 +1,16 @@
 import * as Tone from 'tone';
 
-let synth: Tone.PolySynth<Tone.Synth> | null = null;
+let synth: Tone.PolySynth<any> | null = null;
 let volume: Tone.Volume | null = null;
 let rhythmSeq: Tone.Sequence | null = null;
 let playbackPart: Tone.Part | null = null;
 
 const instruments = {
-    default: () => new Tone.Synth().toDestination(),
-    am: () => new Tone.AMSynth().toDestination(),
-    fm: () => new Tone.FMSynth().toDestination(),
-    membrane: () => new Tone.MembraneSynth().toDestination(),
-    pluck: () => new Tone.PluckSynth().toDestination(),
+    default: Tone.Synth,
+    am: Tone.AMSynth,
+    fm: Tone.FMSynth,
+    membrane: Tone.MembraneSynth,
+    pluck: Tone.PluckSynth,
 };
 
 const rhythms = {
@@ -57,7 +57,7 @@ export function setInstrument(instrumentName: string) {
     synth.dispose();
 
     // Create a new synth with the selected instrument type
-    const instrumentConstructor = instruments[instrumentName as keyof typeof instruments] as any;
+    const instrumentConstructor = instruments[instrumentName as keyof typeof instruments];
     if (instrumentConstructor) {
         synth = new Tone.PolySynth(instrumentConstructor);
         if(volume) {
