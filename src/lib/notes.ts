@@ -38,3 +38,4 @@ export const getPianoKeys = (keyCount: KeyCount): PianoKey[] => {
 
   return keys;
 };
+
