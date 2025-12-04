@@ -12,7 +12,23 @@ const instruments = {
     fm: Tone.FMSynth,
     membrane: Tone.MembraneSynth,
     pluck: Tone.PluckSynth,
+    grandPiano: Tone.Synth,
 };
+
+const instrumentConfigs = {
+    grandPiano: {
+        oscillator: {
+            type: "sine"
+        },
+        envelope: {
+            attack: 0.005,
+            decay: 0.1,
+            sustain: 0.3,
+            release: 1
+        }
+    }
+}
+
 
 const rhythms = {
     none: null,
@@ -75,23 +91,21 @@ export function setInstrument(instrumentName: string) {
         synth.dispose();
     }
 
-    const instrumentConstructor = instruments[instrumentName as keyof typeof instruments];
+    const instrumentConstructor = instruments[instrumentName as keyof typeof instruments] || Tone.Synth;
     
-    if (!instrumentConstructor) {
-        // Fallback to default if instrument not found
-        synth = new Tone.PolySynth(Tone.Synth).connect(volume);
-        return;
-    }
-
     if (instrumentName === 'pluck') {
         synth = new Tone.PluckSynth().connect(volume);
     } else if (instrumentName === 'membrane') {
+        // MembraneSynth is monophonic, so it should be wrapped in PolySynth for polyphony
         synth = new Tone.PolySynth(Tone.MembraneSynth).connect(volume);
-    } 
-    else {
-        synth = new Tone.PolySynth(instrumentConstructor).connect(volume);
+    } else {
+        const config = instrumentName === 'grandPiano' 
+            ? instrumentConfigs.grandPiano 
+            : {};
+        synth = new Tone.PolySynth(instrumentConstructor, config).connect(volume);
     }
 }
+
 
 export function setSustainDuration(duration: number) {
     if (synth && 'set' in synth && typeof (synth as any).set === 'function') {
@@ -180,5 +194,5 @@ export function stopPlaying() {
     }
 }
 
-export const getInstruments = () => Object.keys(instruments).map(key => ({ value: key, label: key.charAt(0).toUpperCase() + key.slice(1) }));
+export const getInstruments = () => Object.keys(instruments).map(key => ({ value: key, label: key.charAt(0).toUpperCase() + key.slice(1).replace(/([A-Z])/g, ' $1').trim() }));
 export const getRhythms = () => Object.keys(rhythms).map(key => ({ value: key, label: key.charAt(0).toUpperCase() + key.slice(1).replace(/([A-Z])/g, ' $1').trim() }));
