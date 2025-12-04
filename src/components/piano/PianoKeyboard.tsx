@@ -69,25 +69,12 @@ const Key = memo(({
     isPressed && (isBlack ? '!bg-accent' : '!bg-orange-200 border-accent'),
     !isBlack && 'border-l border-r'
   );
-  
-  const blackKeyLeftOffset = () => {
-    // A#0, C#1, D#1, F#1, G#1...
-    const note = pianoKey.note.substring(0, 2);
-    switch (note) {
-        case 'A#': return '58.33%'; // Gap between A and B
-        case 'C#': return '12.5%'; // C and D
-        case 'D#': return '29.16%'; // D and E
-        case 'F#': return '54.16%'; // F and G
-        case 'G#': return '70.83%'; // G and A
-        default: return '0';
-    }
-  }
 
   const whiteKeyWidth = 100 / whiteKeyCount;
 
   const styles = isBlack
     ? {
-        left: `calc(${whiteKeyWidth * whiteKeyIndex}% + ${whiteKeyWidth}% * ${parseFloat(blackKeyLeftOffset()) / 100} - (${whiteKeyWidth}% * 0.55 / 2))`,
+        left: `calc(${whiteKeyWidth * whiteKeyIndex}% + ${whiteKeyWidth}% - (${whiteKeyWidth * 0.55 / 2}%))`,
         width: `${whiteKeyWidth * 0.55}%`,
       }
     : {
@@ -126,24 +113,15 @@ export default function PianoKeyboard({ keyCount, pressedKeys, highlightedKeys, 
 
             if (isBlack) {
                 // Find the preceding white key's index
-                for(let i = pianoKeys.findIndex(pk => pk.midi === key.midi) - 1; i >= 0; i--) {
-                    if (pianoKeys[i].type === 'white') {
-                        whiteKeyIndex = whiteKeys.findIndex(wk => wk.midi === pianoKeys[i].midi);
-                        break;
-                    }
+                const precedingWhiteKey = pianoKeys.slice(0, pianoKeys.findIndex(pk => pk.midi === key.midi))
+                    .filter(pk => pk.type === 'white').pop();
+                if(precedingWhiteKey) {
+                    whiteKeyIndex = whiteKeys.findIndex(wk => wk.midi === precedingWhiteKey.midi);
                 }
             } else {
                 whiteKeyIndex = whiteKeys.findIndex(wk => wk.midi === key.midi);
             }
             
-            if (whiteKeyIndex === -1 && isBlack) {
-                const nextWhiteKey = pianoKeys.find((pk, i) => i > pianoKeys.findIndex(k => k.midi === key.midi) && pk.type === 'white');
-                if (nextWhiteKey) {
-                    whiteKeyIndex = whiteKeys.findIndex(wk => wk.midi === nextWhiteKey.midi) - 1;
-                }
-            }
-
-
             return (
                 <Key
                     key={key.midi}
