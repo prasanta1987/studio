@@ -139,7 +139,7 @@ export function stopRhythm() {
     }
 }
 
-export function playRecording(events: {note: number; time: number; duration: number}[], onEnd: () => void) {
+export function playRecording(events: {note: number; time: number; duration: number, velocity: number}[], onEnd: () => void) {
     if (playbackPart) {
         playbackPart.dispose();
     }
@@ -149,7 +149,7 @@ export function playRecording(events: {note: number; time: number; duration: num
         if (synth instanceof Tone.PluckSynth) {
              synth?.triggerAttack(Tone.Frequency(value.note, 'midi'), time);
         } else if (synth instanceof Tone.PolySynth) {
-            synth?.triggerAttackRelease(Tone.Frequency(value.note, 'midi'), value.duration, time);
+            synth?.triggerAttackRelease(Tone.Frequency(value.note, 'midi'), value.duration, time, value.velocity);
         }
     }, events.map(e => ({...e, note: e.note}))).start(0);
 
@@ -160,12 +160,10 @@ export function playRecording(events: {note: number; time: number; duration: num
     Tone.Transport.scheduleOnce(() => {
         stopPlaying();
         onEnd();
-    }, totalDuration);
+    }, totalDuration + 0.5); // Add a small buffer
 }
 
 export function stopPlaying() {
-    Tone.Transport.stop();
-    Tone.Transport.cancel();
     if (playbackPart) {
         playbackPart.stop(0);
         playbackPart.dispose();
@@ -173,6 +171,12 @@ export function stopPlaying() {
     }
     if (synth instanceof Tone.PolySynth) {
         synth?.releaseAll();
+    }
+    
+    // Only stop transport if no rhythm is playing
+    if (!rhythmSeq) {
+        Tone.Transport.stop();
+        Tone.Transport.cancel();
     }
 }
 

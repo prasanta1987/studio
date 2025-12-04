@@ -3,6 +3,7 @@
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import * as Tone from 'tone';
+import { Midi } from '@tonejs/midi';
 import { useMidi } from '@/hooks/useMidi';
 import { initSynth, playNote, releaseNote, setInstrument, setVolume, playRhythm, stopRhythm, getInstruments, getRhythms, playRecording, stopPlaying, setSustainDuration } from '@/lib/synth';
 import PianoKeyboard from '@/components/piano/PianoKeyboard';
@@ -16,6 +17,7 @@ type RecordingEvent = {
   note: number;
   time: number;
   duration: number;
+  velocity: number;
 };
 
 export default function Home() {
@@ -26,7 +28,7 @@ export default function Home() {
   const [isPlaying, setIsPlaying] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
   const recording = useRef<RecordingEvent[]>([]);
-  const notesOn = useRef<Map<number, number>>(new Map());
+  const notesOn = useRef<Map<number, { time: number, velocity: number }>>(new Map());
   const { toast } = useToast();
 
   const onNoteOn = useCallback((note: number, velocity: number) => {
@@ -35,7 +37,7 @@ export default function Home() {
     setPressedKeys(prev => new Set(prev.add(note)));
 
     if (isRecording) {
-      notesOn.current.set(note, Tone.Transport.now());
+      notesOn.current.set(note, { time: Tone.Transport.now(), velocity: velocity / 127 });
     }
   }, [isRecording, isInitialized]);
 
@@ -49,9 +51,9 @@ export default function Home() {
     });
 
     if (isRecording && notesOn.current.has(note)) {
-      const startTime = notesOn.current.get(note)!;
-      const duration = Tone.Transport.now() - startTime;
-      recording.current.push({ note, time: startTime, duration });
+      const noteOn = notesOn.current.get(note)!;
+      const duration = Tone.Transport.now() - noteOn.time;
+      recording.current.push({ note, time: noteOn.time, duration, velocity: noteOn.velocity });
       notesOn.current.delete(note);
     }
   }, [isRecording, isInitialized]);
@@ -154,8 +156,49 @@ export default function Home() {
         return;
       }
       setIsPlaying(true);
-      playRecording(recording.current, () => setIsPlaying(false));
+      playRecording(recording.current, () => {
+        setIsPlaying(false)
+        if (rhythm === 'none') {
+          Tone.Transport.stop();
+        }
+      });
     }
+  };
+
+  const handleDownload = () => {
+    if (recording.current.length === 0) {
+      toast({
+        title: "Nothing to download",
+        description: "Record a performance first.",
+      });
+      return;
+    }
+
+    const midi = new Midi();
+    const track = midi.addTrack();
+
+    recording.current.forEach(event => {
+      track.addNote({
+        midi: event.note,
+        time: event.time,
+        duration: event.duration,
+        velocity: event.velocity,
+      });
+    });
+
+    const midiData = midi.toArray();
+    const blob = new Blob([midiData], { type: 'audio/midi' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'virtuoso-keys-recording.mid';
+    a.click();
+    URL.revokeObjectURL(url);
+    
+    toast({
+        title: "Download Started",
+        description: "Your recording is being downloaded as a MIDI file.",
+    });
   };
 
   const getNoteName = (midi: number) => {
@@ -196,6 +239,7 @@ export default function Home() {
             isPlaying={isPlaying}
             onRecord={handleRecord}
             onPlay={handlePlay}
+            onDownload={handleDownload}
             disabled={!isInitialized}
           />
           <div className="mt-6 w-full relative" style={{aspectRatio: '5 / 1'}}>

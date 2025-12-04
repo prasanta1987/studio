@@ -2,7 +2,7 @@
 "use client"
 
 import * as React from "react"
-import { Volume2, Music, Drum, Circle, Play, Square, Pause, Waves } from "lucide-react"
+import { Volume2, Music, Drum, Circle, Play, Square, Pause, Waves, Download } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -30,6 +30,7 @@ interface MainControlsProps {
   isPlaying: boolean;
   onRecord: () => void;
   onPlay: () => void;
+  onDownload: () => void;
   disabled?: boolean;
 }
 
@@ -46,6 +47,7 @@ export default function MainControls({
   isPlaying,
   onRecord,
   onPlay,
+  onDownload,
   disabled = false,
 }: MainControlsProps) {
   return (
@@ -122,6 +124,22 @@ export default function MainControls({
                 </TooltipTrigger>
                 <TooltipContent>
                   <p>{isPlaying ? "Pause Playback" : "Play Recording (P)"}</p>
+                </TooltipContent>
+              </Tooltip>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                    <Button 
+                        variant="outline" 
+                        size="icon" 
+                        onClick={onDownload}
+                        aria-label="Download Recording"
+                        disabled={disabled || isRecording || isPlaying}
+                    >
+                        <Download />
+                    </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                    <p>Download Recording</p>
                 </TooltipContent>
               </Tooltip>
             </div>
