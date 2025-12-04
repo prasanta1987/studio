@@ -2,7 +2,7 @@
 "use client"
 
 import * as React from "react"
-import { Volume2, Music, Drum, Circle, Play, Square, Pause, Waves, Download } from "lucide-react"
+import { Volume2, Music, Drum, Circle, Play, Square, Pause, Waves, Download, Keyboard } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -16,6 +16,8 @@ import { Slider } from "@/components/ui/slider"
 import { Card, CardContent } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import type { KeyCount } from "@/app/page";
+
 
 interface MainControlsProps {
   instrument: string;
@@ -32,7 +34,15 @@ interface MainControlsProps {
   onPlay: () => void;
   onDownload: () => void;
   disabled?: boolean;
+  keyCount: KeyCount;
+  onKeyCountChange: (value: string) => void;
 }
+
+const keyCountOptions: { value: KeyCount, label: string }[] = [
+    { value: 37, label: '37 Keys' },
+    { value: 61, label: '61 Keys' },
+    { value: 88, label: '88 Keys' },
+];
 
 export default function MainControls({
   instrument,
@@ -49,12 +59,31 @@ export default function MainControls({
   onPlay,
   onDownload,
   disabled = false,
+  keyCount,
+  onKeyCountChange,
 }: MainControlsProps) {
   return (
     <Card className="w-full shadow-lg">
       <CardContent className="p-3">
         <TooltipProvider>
           <div className="flex flex-wrap items-center justify-center gap-4 md:gap-6">
+            {/* Key Count Selector */}
+            <div className="flex items-center gap-2">
+                <Keyboard className="text-muted-foreground" />
+                <Select value={String(keyCount)} onValueChange={onKeyCountChange} disabled={disabled}>
+                    <SelectTrigger className="w-[120px]">
+                        <SelectValue placeholder="Keys" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        {keyCountOptions.map((opt) => (
+                            <SelectItem key={opt.value} value={String(opt.value)}>
+                                {opt.label}
+                            </SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
+            </div>
+            
             {/* Tone Selector */}
             <div className="flex items-center gap-2">
               <Music className="text-muted-foreground" />

@@ -10,7 +10,7 @@ import PianoKeyboard from '@/components/piano/PianoKeyboard';
 import MainControls from '@/components/controls/MainControls';
 import { Logo } from '@/components/Logo';
 import { useToast } from '@/hooks/use-toast';
-import { PIANO_KEYS } from '@/lib/notes';
+import { getPianoKeys } from '@/lib/notes';
 import { Usb } from 'lucide-react';
 
 type RecordingEvent = {
@@ -20,6 +20,8 @@ type RecordingEvent = {
   velocity: number;
 };
 
+export type KeyCount = 37 | 61 | 88;
+
 export default function Home() {
   const [pressedKeys, setPressedKeys] = useState<Set<number>>(new Set());
   const [instrument, setCurrentInstrument] = useState<string>('default');
@@ -27,9 +29,12 @@ export default function Home() {
   const [isRecording, setIsRecording] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
+  const [keyCount, setKeyCount] = useState<KeyCount>(88);
   const recording = useRef<RecordingEvent[]>([]);
   const notesOn = useRef<Map<number, { time: number, velocity: number }>>(new Map());
   const { toast } = useToast();
+
+  const PIANO_KEYS = getPianoKeys(keyCount);
 
   const onNoteOn = useCallback((note: number, velocity: number) => {
     if (!isInitialized) return;
@@ -100,6 +105,10 @@ export default function Home() {
 
   const handleSustainChange = (value: number[]) => {
     setSustainDuration(value[0]);
+  };
+
+  const handleKeyCountChange = (value: string) => {
+    setKeyCount(parseInt(value, 10) as KeyCount);
   };
   
   const handleRecord = () => {
@@ -241,9 +250,12 @@ export default function Home() {
             onPlay={handlePlay}
             onDownload={handleDownload}
             disabled={!isInitialized}
+            keyCount={keyCount}
+            onKeyCountChange={handleKeyCountChange}
           />
           <div className="mt-6 w-full relative" style={{aspectRatio: '5 / 1'}}>
             <PianoKeyboard
+              keyCount={keyCount}
               pressedKeys={pressedKeys}
               onNoteOn={onNoteOn}
               onNoteOff={onNoteOff}

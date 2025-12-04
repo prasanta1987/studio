@@ -1,10 +1,13 @@
+
 "use client";
 
 import React, { memo } from 'react';
-import { PIANO_KEYS, type PianoKey } from '@/lib/notes';
+import { getPianoKeys, type PianoKey } from '@/lib/notes';
 import { cn } from '@/lib/utils';
+import type { KeyCount } from '@/app/page';
 
 interface PianoKeyboardProps {
+  keyCount: KeyCount;
   pressedKeys: Set<number>;
   onNoteOn: (note: number, velocity?: number) => void;
   onNoteOff: (note: number) => void;
@@ -16,16 +19,16 @@ const Key = memo(({
   onNoteOn,
   onNoteOff,
   isBlack,
-  blackKeyIndex,
   whiteKeyIndex,
+  whiteKeyCount
 }: {
   pianoKey: PianoKey;
   isPressed: boolean;
   onNoteOn: (note: number, velocity?: number) => void;
   onNoteOff: (note: number) => void;
   isBlack: boolean;
-  blackKeyIndex: number;
   whiteKeyIndex: number;
+  whiteKeyCount: number;
 }) => {
   const handleMouseDown = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -76,14 +79,16 @@ const Key = memo(({
     }
   }
 
+  const whiteKeyWidth = 100 / whiteKeyCount;
+
   const styles = isBlack
     ? {
-        left: `calc(${(100 / 52) * whiteKeyIndex}% + (100% / 52) * ${parseFloat(blackKeyLeftOffset()) / 100} - (100% / 52 * 0.55 / 2))`,
-        width: `calc(100% / 52 * 0.55)`,
+        left: `calc(${whiteKeyWidth * whiteKeyIndex}% + ${whiteKeyWidth}% * ${parseFloat(blackKeyLeftOffset()) / 100} - (${whiteKeyWidth}% * 0.55 / 2))`,
+        width: `${whiteKeyWidth * 0.55}%`,
       }
     : {
-        left: `${(100 / 52) * whiteKeyIndex}%`,
-        width: `calc(100% / 52)`,
+        left: `${whiteKeyWidth * whiteKeyIndex}%`,
+        width: `${whiteKeyWidth}%`,
       };
 
   return (
@@ -104,27 +109,36 @@ const Key = memo(({
 Key.displayName = 'Key';
 
 
-export default function PianoKeyboard({ pressedKeys, onNoteOn, onNoteOff }: PianoKeyboardProps) {
-    const whiteKeys = PIANO_KEYS.filter(key => key.type === 'white');
-    const blackKeys = PIANO_KEYS.filter(key => key.type === 'black');
+export default function PianoKeyboard({ keyCount, pressedKeys, onNoteOn, onNoteOff }: PianoKeyboardProps) {
+    const pianoKeys = getPianoKeys(keyCount);
+    const whiteKeys = pianoKeys.filter(key => key.type === 'white');
 
   return (
     <div className="relative w-full h-full bg-gray-900 rounded-lg shadow-2xl p-2">
       <div className="relative w-full h-full">
-         {PIANO_KEYS.map((key) => {
+         {pianoKeys.map((key) => {
             const isBlack = key.type === 'black';
             let whiteKeyIndex = -1;
+
             if (isBlack) {
                 // Find the preceding white key's index
-                for(let i=key.midi - 21; i >= 0; i--) {
-                    if (PIANO_KEYS[i].type === 'white') {
-                        whiteKeyIndex = whiteKeys.findIndex(wk => wk.midi === PIANO_KEYS[i].midi);
+                for(let i = pianoKeys.findIndex(pk => pk.midi === key.midi) - 1; i >= 0; i--) {
+                    if (pianoKeys[i].type === 'white') {
+                        whiteKeyIndex = whiteKeys.findIndex(wk => wk.midi === pianoKeys[i].midi);
                         break;
                     }
                 }
             } else {
                 whiteKeyIndex = whiteKeys.findIndex(wk => wk.midi === key.midi);
             }
+            
+            if (whiteKeyIndex === -1 && isBlack) {
+                const nextWhiteKey = pianoKeys.find((pk, i) => i > pianoKeys.findIndex(k => k.midi === key.midi) && pk.type === 'white');
+                if (nextWhiteKey) {
+                    whiteKeyIndex = whiteKeys.findIndex(wk => wk.midi === nextWhiteKey.midi) - 1;
+                }
+            }
+
 
             return (
                 <Key
@@ -134,8 +148,8 @@ export default function PianoKeyboard({ pressedKeys, onNoteOn, onNoteOff }: Pian
                     onNoteOn={onNoteOn}
                     onNoteOff={onNoteOff}
                     isBlack={isBlack}
-                    blackKeyIndex={isBlack ? blackKeys.findIndex(bk => bk.midi === key.midi) : -1}
                     whiteKeyIndex={whiteKeyIndex}
+                    whiteKeyCount={whiteKeys.length}
                 />
             );
          })}
