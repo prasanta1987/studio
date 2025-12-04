@@ -112,7 +112,10 @@ export default function Home() {
 
     if (isRecording) {
       setIsRecording(false);
-      Tone.Transport.stop();
+      // Don't stop transport if a rhythm is playing
+      if (rhythm === 'none') {
+        Tone.Transport.stop();
+      }
       toast({
         title: "Recording Stopped",
         description: `Your performance of ${recording.current.length} notes was saved.`,
