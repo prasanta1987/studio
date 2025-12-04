@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { Volume2, Music, Metronome, Circle, Play, Square, Pause } from "lucide-react"
+import { Volume2, Music, Drum, Circle, Play, Square, Pause } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -69,7 +69,7 @@ export default function MainControls({
 
             {/* Rhythm Selector */}
             <div className="flex items-center gap-2">
-              <Metronome className="text-muted-foreground" />
+              <Drum className="text-muted-foreground" />
               <Select value={rhythm} onValueChange={onRhythmChange} disabled={disabled}>
                 <SelectTrigger className="w-[150px]">
                   <SelectValue placeholder="Rhythm" />
