@@ -1,3 +1,203 @@
+"use client";
+
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import * as Tone from 'tone';
+import { useMidi } from '@/hooks/useMidi';
+import { initSynth, playNote, releaseNote, setInstrument, setVolume, playRhythm, stopRhythm, getInstruments, getRhythms, playRecording, stopPlaying, getNoteTime, getNoteDuration } from '@/lib/synth';
+import PianoKeyboard from '@/components/piano/PianoKeyboard';
+import MainControls from '@/components/controls/MainControls';
+import { Logo } from '@/components/Logo';
+import { useToast } from '@/hooks/use-toast';
+import { PIANO_KEYS } from '@/lib/notes';
+import { Usb } from 'lucide-react';
+
+type RecordingEvent = {
+  note: number;
+  time: number;
+  duration: number;
+};
+
 export default function Home() {
-  return <></>;
+  const [pressedKeys, setPressedKeys] = useState<Set<number>>(new Set());
+  const [instrument, setCurrentInstrument] = useState<string>('default');
+  const [rhythm, setCurrentRhythm] = useState<string>('none');
+  const [isRecording, setIsRecording] = useState(false);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [isInitialized, setIsInitialized] = useState(false);
+  const recording = useRef<RecordingEvent[]>([]);
+  const notesOn = useRef<Map<number, number>>(new Map());
+  const { toast } = useToast();
+
+  const onNoteOn = useCallback((note: number, velocity: number) => {
+    if (!isInitialized) return;
+    playNote(note, velocity);
+    setPressedKeys(prev => new Set(prev.add(note)));
+
+    if (isRecording) {
+      notesOn.current.set(note, Tone.Transport.now());
+    }
+  }, [isRecording, isInitialized]);
+
+  const onNoteOff = useCallback((note: number) => {
+    if (!isInitialized) return;
+    releaseNote(note);
+    setPressedKeys(prev => {
+      const newSet = new Set(prev);
+      newSet.delete(note);
+      return newSet;
+    });
+
+    if (isRecording && notesOn.current.has(note)) {
+      const startTime = notesOn.current.get(note)!;
+      const duration = Tone.Transport.now() - startTime;
+      recording.current.push({ note, time: startTime, duration });
+      notesOn.current.delete(note);
+    }
+  }, [isRecording, isInitialized]);
+
+  const { midiStatus, connectedDevice } = useMidi({ onNoteOn, onNoteOff });
+  
+  useEffect(() => {
+    const initialize = async () => {
+      await Tone.start();
+      initSynth();
+      setIsInitialized(true);
+    };
+
+    if (typeof window !== 'undefined') {
+      document.body.addEventListener('click', () => initialize(), { once: true });
+      document.body.addEventListener('keydown', () => initialize(), { once: true });
+    }
+
+    return () => {
+      if (typeof window !== 'undefined') {
+        document.body.removeEventListener('click', () => initialize());
+        document.body.removeEventListener('keydown', () => initialize());
+      }
+    };
+  }, []);
+
+  const handleInstrumentChange = (value: string) => {
+    setCurrentInstrument(value);
+    setInstrument(value);
+  };
+
+  const handleRhythmChange = (value: string) => {
+    setCurrentRhythm(value);
+    if (value === 'none') {
+      stopRhythm();
+    } else {
+      playRhythm(value);
+    }
+  };
+
+  const handleVolumeChange = (value: number[]) => {
+    setVolume(value[0]);
+  };
+  
+  const handleRecord = () => {
+    if (isPlaying) {
+      toast({
+        title: "Cannot record during playback",
+        description: "Please stop playback before starting a new recording.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (isRecording) {
+      setIsRecording(false);
+      Tone.Transport.stop();
+      toast({
+        title: "Recording Stopped",
+        description: `Your performance of ${recording.current.length} notes was saved.`,
+      });
+    } else {
+      setIsRecording(true);
+      recording.current = [];
+      notesOn.current.clear();
+      Tone.Transport.start();
+      toast({
+        title: "Recording Started",
+        description: "Your performance is now being recorded.",
+      });
+    }
+  };
+
+  const handlePlay = () => {
+    if (isRecording) {
+      toast({
+        title: "Cannot play during recording",
+        description: "Please stop recording before playing back.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (isPlaying) {
+      setIsPlaying(false);
+      stopPlaying();
+    } else {
+      if (recording.current.length === 0) {
+        toast({
+          title: "Nothing to play",
+          description: "Record a performance first.",
+        });
+        return;
+      }
+      setIsPlaying(true);
+      playRecording(recording.current, () => setIsPlaying(false));
+    }
+  };
+
+  const getNoteName = (midi: number) => {
+    const key = PIANO_KEYS.find(k => k.midi === midi);
+    return key ? key.note : '';
+  };
+
+  return (
+    <div className="flex flex-col h-screen bg-background text-foreground overflow-hidden">
+      <header className="p-4 border-b border-border shadow-sm">
+        <div className="container mx-auto flex justify-between items-center">
+          <Logo />
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+             <Usb className={`size-4 ${midiStatus === 'connected' ? 'text-green-500' : 'text-muted-foreground'}`} />
+            <span>{connectedDevice ? `Connected: ${connectedDevice}` : 'No MIDI device connected'}</span>
+          </div>
+        </div>
+      </header>
+
+      <main className="flex-grow flex flex-col items-center justify-center p-4 md:p-8 relative">
+        {!isInitialized && (
+          <div className="absolute inset-0 bg-background/80 backdrop-blur-sm flex flex-col items-center justify-center z-20">
+              <h2 className="text-2xl font-bold mb-2">Welcome to VirtuosoKeys</h2>
+              <p className="text-muted-foreground">Click or press any key to start the audio engine.</p>
+          </div>
+        )}
+        <div className={`w-full max-w-7xl transition-opacity duration-500 ${isInitialized ? 'opacity-100' : 'opacity-50 blur-sm'}`}>
+          <MainControls
+            instrument={instrument}
+            onInstrumentChange={handleInstrumentChange}
+            instruments={getInstruments()}
+            rhythm={rhythm}
+            onRhythmChange={handleRhythmChange}
+            rhythms={getRhythms()}
+            onVolumeChange={handleVolumeChange}
+            isRecording={isRecording}
+            isPlaying={isPlaying}
+            onRecord={handleRecord}
+            onPlay={handlePlay}
+            disabled={!isInitialized}
+          />
+          <div className="mt-6 w-full relative" style={{aspectRatio: '5 / 1'}}>
+            <PianoKeyboard
+              pressedKeys={pressedKeys}
+              onNoteOn={onNoteOn}
+              onNoteOff={onNoteOff}
+            />
+          </div>
+        </div>
+      </main>
+    </div>
+  );
 }
