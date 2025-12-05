@@ -14,6 +14,7 @@ interface PianoKeyboardProps {
   onNoteOn: (note: number, velocity?: number) => void;
   onNoteOff: (note: number) => void;
   showNoteNames: boolean;
+  detectedNote: number | null;
 }
 
 const Key = memo(({
@@ -27,6 +28,7 @@ const Key = memo(({
   whiteKeyIndex,
   whiteKeyCount,
   showNoteNames,
+  isDetected,
 }: {
   pianoKey: PianoKey;
   isPressed: boolean;
@@ -38,6 +40,7 @@ const Key = memo(({
   whiteKeyIndex: number;
   whiteKeyCount: number;
   showNoteNames: boolean;
+  isDetected: boolean;
 }) => {
   const handleMouseDown = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -71,9 +74,10 @@ const Key = memo(({
     isBlack
       ? 'w-[55%] h-[60%] bg-gray-800 border-gray-900 z-10 hover:bg-gray-700'
       : 'w-full h-full bg-white border-gray-200',
-    isRoot && !isPressed && 'border-accent',
-    isHighlighted && !isRoot && !isPressed && 'border-sky-500',
+    isRoot && !isPressed && !isDetected && 'border-accent',
+    isHighlighted && !isRoot && !isPressed && !isDetected && 'border-sky-500',
     isPressed && (isBlack ? '!bg-accent border-accent-dark' : '!bg-orange-200 border-accent'),
+    isDetected && (isBlack ? '!bg-purple-500 border-purple-700' : '!bg-purple-300 border-purple-500'),
     !isBlack && 'border-l border-r'
   );
 
@@ -115,7 +119,7 @@ const Key = memo(({
 Key.displayName = 'Key';
 
 
-export default function PianoKeyboard({ keyCount, pressedKeys, highlightedKeys, rootNoteIndex, onNoteOn, onNoteOff, showNoteNames }: PianoKeyboardProps) {
+export default function PianoKeyboard({ keyCount, pressedKeys, highlightedKeys, rootNoteIndex, onNoteOn, onNoteOff, showNoteNames, detectedNote }: PianoKeyboardProps) {
     const pianoKeys = getPianoKeys(keyCount);
     const whiteKeys = pianoKeys.filter(key => key.type === 'white');
 
@@ -152,6 +156,7 @@ export default function PianoKeyboard({ keyCount, pressedKeys, highlightedKeys, 
                     whiteKeyIndex={whiteKeyIndex}
                     whiteKeyCount={whiteKeys.length}
                     showNoteNames={showNoteNames}
+                    isDetected={detectedNote === key.midi}
                 />
             );
          })}

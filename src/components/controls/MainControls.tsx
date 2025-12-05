@@ -2,7 +2,7 @@
 "use client"
 
 import * as React from "react"
-import { Volume2, Music, Circle, Play, Square, Pause, Waves, Download, Keyboard } from "lucide-react"
+import { Volume2, Music, Circle, Play, Square, Pause, Waves, Download, Keyboard, Mic } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -43,6 +43,8 @@ interface MainControlsProps {
   onScaleTypeChange: (value: Scale) => void;
   showNoteNames: boolean;
   onShowNoteNamesChange: (checked: boolean) => void;
+  isPitchMonitoring: boolean;
+  onPitchMonitorToggle: () => void;
 }
 
 const keyCountOptions: { value: KeyCount, label: string }[] = [
@@ -71,6 +73,8 @@ export default function MainControls({
   onScaleTypeChange,
   showNoteNames,
   onShowNoteNamesChange,
+  isPitchMonitoring,
+  onPitchMonitorToggle,
 }: MainControlsProps) {
   return (
     <Card className="w-full shadow-lg">
@@ -193,6 +197,22 @@ export default function MainControls({
                 </TooltipTrigger>
                 <TooltipContent>
                     <p>Download Recording</p>
+                </TooltipContent>
+              </Tooltip>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant={isPitchMonitoring ? 'secondary' : 'outline'}
+                    size="icon"
+                    onClick={onPitchMonitorToggle}
+                    disabled={disabled}
+                    aria-label={isPitchMonitoring ? 'Stop Pitch Monitor' : 'Start Pitch Monitor'}
+                  >
+                    <Mic className={isPitchMonitoring ? 'text-accent' : ''} />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>{isPitchMonitoring ? 'Stop Pitch Monitor' : 'Start Pitch Monitor'}</p>
                 </TooltipContent>
               </Tooltip>
             </div>

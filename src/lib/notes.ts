@@ -36,3 +36,9 @@ export const getPianoKeys = (keyCount: KeyCount): PianoKey[] => {
 
   return keys;
 };
+
+export const midiToNoteName = (midi: number): string => {
+  const noteIndex = midi % 12;
+  const octave = Math.floor(midi / 12) - 1;
+  return `${NOTE_NAMES[noteIndex]}${octave}`;
+};

@@ -3,6 +3,7 @@
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import * as Tone from 'tone';
+import { PitchDetect } from 'tone/examples';
 import { Midi } from '@tonejs/midi';
 import { useMidi } from '@/hooks/useMidi';
 import { initSynth, playNote, releaseNote, setInstrument, setVolume, playRecording, stopPlaying, setSustainDuration, getInstruments } from '@/lib/synth';
@@ -10,7 +11,7 @@ import PianoKeyboard from '@/components/piano/PianoKeyboard';
 import MainControls from '@/components/controls/MainControls';
 import { Logo } from '@/components/Logo';
 import { useToast } from '@/hooks/use-toast';
-import { getPianoKeys, NOTE_NAMES, KEY_RANGES } from '@/lib/notes';
+import { getPianoKeys, NOTE_NAMES, KEY_RANGES, midiToNoteName } from '@/lib/notes';
 import { getScaleNotes, Scale } from '@/lib/scales';
 import { Usb } from 'lucide-react';
 
@@ -34,8 +35,14 @@ export default function Home() {
   const [scaleType, setScaleType] = useState<Scale>('major');
   const [highlightedKeys, setHighlightedKeys] = useState<number[]>([]);
   const [showNoteNames, setShowNoteNames] = useState(false);
+  const [isPitchMonitoring, setIsPitchMonitoring] = useState(false);
+  const [detectedNote, setDetectedNote] = useState<number | null>(null);
+
   const recording = useRef<RecordingEvent[]>([]);
   const notesOn = useRef<Map<number, { time: number, velocity: number }>>(new Map());
+  const pitchDetect = useRef<PitchDetect | null>(null);
+  const mic = useRef<Tone.UserMedia | null>(null);
+
   const { toast } = useToast();
 
   const PIANO_KEYS = getPianoKeys(keyCount);
@@ -224,6 +231,44 @@ a.href = url;
     });
   };
 
+  const handlePitchMonitorToggle = async () => {
+    if (isPitchMonitoring) {
+      mic.current?.close();
+      pitchDetect.current?.dispose();
+      mic.current = null;
+      pitchDetect.current = null;
+      setIsPitchMonitoring(false);
+      setDetectedNote(null);
+      toast({ title: 'Pitch monitor stopped' });
+    } else {
+      try {
+        mic.current = new Tone.UserMedia();
+        await mic.current.open();
+        
+        pitchDetect.current = new PitchDetect({
+          onpitch: ({ midi }) => {
+            if (midi) {
+              setDetectedNote(midi);
+            } else {
+              setDetectedNote(null);
+            }
+          },
+        });
+        mic.current.connect(pitchDetect.current);
+        setIsPitchMonitoring(true);
+        toast({ title: 'Pitch monitor started' });
+      } catch (e) {
+        console.error(e);
+        toast({
+          title: 'Microphone access denied',
+          description: 'Please allow microphone access in your browser settings.',
+          variant: 'destructive',
+        });
+      }
+    }
+  };
+
+
   const getNoteName = (midi: number) => {
     const key = PIANO_KEYS.find(k => k.midi === midi);
     return key ? key.note : '';
@@ -271,6 +316,8 @@ a.href = url;
             onScaleTypeChange={handleScaleTypeChange}
             showNoteNames={showNoteNames}
             onShowNoteNamesChange={handleShowNoteNamesChange}
+            isPitchMonitoring={isPitchMonitoring}
+            onPitchMonitorToggle={handlePitchMonitorToggle}
           />
           <div className="mt-6 w-full relative" style={{aspectRatio: '5 / 1'}}>
             <PianoKeyboard
@@ -281,6 +328,7 @@ a.href = url;
               onNoteOn={onNoteOn}
               onNoteOff={onNoteOff}
               showNoteNames={showNoteNames}
+              detectedNote={detectedNote}
             />
           </div>
         </div>
