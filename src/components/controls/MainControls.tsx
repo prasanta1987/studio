@@ -25,7 +25,7 @@ import { Label } from "@/components/ui/label";
 
 interface MainControlsProps {
   instrument: string;
-  onInstrumentChange: (value: string) => void;
+  onInstrumentChange: (value: string) => Promise<void>;
   instruments: { value: string; label: string }[];
   onVolumeChange: (value: number[]) => void;
   onSustainChange: (value: number[]) => void;

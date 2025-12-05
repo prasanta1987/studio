@@ -20,32 +20,22 @@ export function detectChord(midiNotes: number[]): string | null {
     return null;
   }
 
-  // Sort notes and get the root note
-  const sortedNotes = [...midiNotes].sort((a, b) => a - b);
+  const sortedPitches = [...new Set(midiNotes.map(n => n % 12))].sort((a, b) => a - b);
   
-  // Create unique set of intervals from the root
-  const getIntervals = (root: number) => {
-    return new Set(sortedNotes.map(note => (note - root) % 12));
-  };
-  
-  // Check all inversions
-  for (let i = 0; i < sortedNotes.length; i++) {
-    const rootNote = sortedNotes[i];
-    const rootNoteName = NOTE_NAMES[rootNote % 12];
-    const intervals = getIntervals(rootNote);
+  for (let i = 0; i < sortedPitches.length; i++) {
+    const rootNote = sortedPitches[i];
+    const rootNoteName = NOTE_NAMES[rootNote];
     
-    for (const chordSuffix in CHORD_INTERVALS) {
-      const chordIntervals = new Set(CHORD_INTERVALS[chordSuffix]);
+    // Create intervals relative to the current potential root
+    const intervals = sortedPitches.map(pitch => (pitch - rootNote + 12) % 12);
+    const intervalSet = new Set(intervals);
 
-      if (intervals.size === chordIntervals.size) {
-        let allMatch = true;
-        for (const interval of Array.from(intervals)) {
-          if (!chordIntervals.has(interval)) {
-            allMatch = false;
-            break;
-          }
-        }
-        if (allMatch) {
+    for (const chordSuffix in CHORD_INTERVALS) {
+      const chordIntervals = CHORD_INTERVALS[chordSuffix];
+
+      if (intervalSet.size === chordIntervals.length) {
+        const isMatch = chordIntervals.every(interval => intervalSet.has(interval));
+        if (isMatch) {
           return `${rootNoteName}${chordSuffix}`;
         }
       }
@@ -54,5 +44,3 @@ export function detectChord(midiNotes: number[]): string | null {
 
   return null; // No matching chord found
 }
-
-    

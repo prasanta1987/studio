@@ -54,7 +54,6 @@ export default function Home() {
   const { toast } = useToast();
 
   const PIANO_KEYS = getPianoKeys(keyCount);
-  const rootNoteMidi = NOTE_NAMES.indexOf(scaleRoot) + KEY_RANGES[keyCount].start;
 
   useEffect(() => {
     const rootNoteIndex = NOTE_NAMES.indexOf(scaleRoot);
@@ -132,8 +131,8 @@ export default function Home() {
   }, []);
 
   const handleInstrumentChange = async (value: string) => {
-    setCurrentInstrument(value);
     await setInstrument(value);
+    setCurrentInstrument(value);
   };
 
   const handleVolumeChange = (value: number[]) => {
@@ -249,7 +248,7 @@ export default function Home() {
     const blob = new Blob([midiData], { type: 'audio/midi' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
-a.href = url;
+    a.href = url;
     a.download = 'virtuoso-keys-recording.mid';
     a.click();
     URL.revokeObjectURL(url);
@@ -260,13 +259,31 @@ a.href = url;
     });
   };
 
-  const startPitchDetection = async () => {
+  const detectPitch = useCallback(() => {
+    if (analyser.current && pitchDetector.current) {
+      const waveformData = analyser.current.getValue();
+      if (waveformData instanceof Float32Array) {
+        const pitch = pitchDetector.current(waveformData);
+        setDetectedFrequency(pitch);
+        if (pitch) {
+          const midi = Tone.Frequency(pitch, 'hz').toMidi();
+          const newNote = Math.round(midi);
+          setDetectedNote(newNote);
+        } else {
+          setDetectedNote(null);
+        }
+      }
+    }
+    animationFrameId.current = requestAnimationFrame(detectPitch);
+  }, []);
+
+  const startPitchDetection = useCallback(async () => {
     try {
       mic.current = new Tone.UserMedia();
       await mic.current.open();
       
       analyser.current = new Tone.Analyser('waveform', 1024);
-      noiseGate.current = new Tone.Gate(-40, 0.1); // Threshold, attack/release time
+      noiseGate.current = new Tone.Gate(-40, 0.1);
       mic.current.connect(noiseGate.current);
       noiseGate.current.connect(analyser.current);
       
@@ -286,9 +303,9 @@ a.href = url;
         variant: 'destructive',
       });
     }
-  };
+  }, [detectPitch, toast]);
 
-  const stopPitchDetection = () => {
+  const stopPitchDetection = useCallback(() => {
     if (animationFrameId.current) {
       cancelAnimationFrame(animationFrameId.current);
       animationFrameId.current = null;
@@ -311,42 +328,17 @@ a.href = url;
     toast({
       title: 'Pitch Monitor Disabled',
     });
-  };
-
-  const detectPitch = () => {
-    if (analyser.current && pitchDetector.current) {
-      const waveformData = analyser.current.getValue();
-      if (waveformData instanceof Float32Array) {
-        const pitch = pitchDetector.current(waveformData);
-        setDetectedFrequency(pitch);
-        if (pitch) {
-          const midi = Tone.Frequency(pitch, 'hz').toMidi();
-          setDetectedNote(prevNote => {
-            const newNote = Math.round(midi);
-            return newNote !== prevNote ? newNote : prevNote;
-          });
-        } else {
-          setDetectedNote(null);
-        }
-      }
-    }
-    animationFrameId.current = requestAnimationFrame(detectPitch);
-  };
+  }, [toast]);
   
-  const handlePitchMonitorToggle = () => {
+  const handlePitchMonitorToggle = useCallback(() => {
     if (!isInitialized) return;
     if (isPitchMonitoring) {
       stopPitchDetection();
     } else {
       startPitchDetection();
     }
-  };
+  }, [isInitialized, isPitchMonitoring, startPitchDetection, stopPitchDetection]);
 
-  const getNoteName = (midi: number) => {
-    const key = PIANO_KEYS.find(k => k.midi === midi);
-    return key ? key.note : '';
-  };
-  
   const rootNoteIndex = NOTE_NAMES.indexOf(scaleRoot);
 
   return (
