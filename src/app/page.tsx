@@ -239,7 +239,7 @@ export default function Home() {
       mic.current = new Tone.UserMedia();
       await mic.current.open();
       
-      analyser.current = new Tone.Analyser('fft', 2048);
+      analyser.current = new Tone.Analyser('waveform', 1024);
       mic.current.connect(analyser.current);
       pitchDetector.current = pitchfinder.YIN({ sampleRate: Tone.context.sampleRate });
 
@@ -282,9 +282,9 @@ export default function Home() {
 
   const detectPitch = () => {
     if (analyser.current && pitchDetector.current) {
-      const fftData = analyser.current.getValue();
-      if (fftData instanceof Float32Array) {
-        const pitch = pitchDetector.current(fftData);
+      const waveformData = analyser.current.getValue();
+      if (waveformData instanceof Float32Array) {
+        const pitch = pitchDetector.current(waveformData);
         setDetectedFrequency(pitch);
         if (pitch) {
           const midi = Tone.Frequency(pitch, 'hz').toMidi();
