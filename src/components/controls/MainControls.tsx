@@ -25,7 +25,7 @@ import { Label } from "@/components/ui/label";
 
 interface MainControlsProps {
   instrument: string;
-  onInstrumentChange: (value: string) => Promise<void>;
+  onInstrumentChange: (value: string) => void;
   instruments: { value: string; label: string }[];
   onVolumeChange: (value: number[]) => void;
   onSustainChange: (value: number[]) => void;
@@ -80,17 +80,6 @@ export default function MainControls({
   theme,
   onThemeChange,
 }: MainControlsProps) {
-  const [isInstrumentLoading, setIsInstrumentLoading] = React.useState(false);
-
-  const handleInstrumentChange = async (value: string) => {
-    if (value === 'grandPiano') {
-      setIsInstrumentLoading(true);
-    }
-    await onInstrumentChange(value);
-    if (value === 'grandPiano') {
-      setIsInstrumentLoading(false);
-    }
-  }
 
   return (
     <Card className="w-full shadow-lg bg-card/80 backdrop-blur-sm border-border/50">
@@ -135,14 +124,14 @@ export default function MainControls({
             {/* Tone Selector */}
             <div className="flex items-center gap-2">
               <Music className="text-muted-foreground" />
-              <Select value={instrument} onValueChange={handleInstrumentChange} disabled={disabled || isInstrumentLoading}>
+              <Select value={instrument} onValueChange={onInstrumentChange} disabled={disabled}>
                 <SelectTrigger className="w-[150px]">
                   <SelectValue placeholder="Tone" />
                 </SelectTrigger>
                 <SelectContent>
                   {instruments.map((inst) => (
                     <SelectItem key={inst.value} value={inst.value}>
-                       {isInstrumentLoading && inst.value === 'grandPiano' ? 'Loading...' : inst.label}
+                       {inst.label}
                     </SelectItem>
                   ))}
                 </SelectContent>

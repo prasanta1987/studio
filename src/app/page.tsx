@@ -130,8 +130,8 @@ export default function Home() {
     };
   }, []);
 
-  const handleInstrumentChange = async (value: string) => {
-    await setInstrument(value);
+  const handleInstrumentChange = (value: string) => {
+    setInstrument(value);
     setCurrentInstrument(value);
   };
 
@@ -248,7 +248,7 @@ export default function Home() {
     const blob = new Blob([midiData], { type: 'audio/midi' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
-    a.href = url;
+a.href = url;
     a.download = 'virtuoso-keys-recording.mid';
     a.click();
     URL.revokeObjectURL(url);

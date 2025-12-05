@@ -1,7 +1,7 @@
 
 import * as Tone from 'tone';
 
-let synth: Tone.PolySynth | Tone.PluckSynth | Tone.Sampler | null = null;
+let synth: Tone.PolySynth | Tone.PluckSynth | null = null;
 let volume: Tone.Volume | null = null;
 let playbackPart: Tone.Part | null = null;
 
@@ -11,44 +11,8 @@ const instruments = {
     fm: Tone.FMSynth,
     membrane: Tone.MembraneSynth,
     pluck: Tone.PluckSynth,
-    grandPiano: Tone.Sampler,
 };
 
-let pianoSampler: Tone.Sampler | null = null;
-let pianoPromise: Promise<Tone.Sampler> | null = null;
-
-function getPianoSampler(): Promise<Tone.Sampler> {
-    if (pianoPromise) {
-        return pianoPromise;
-    }
-    if (pianoSampler) {
-        return Promise.resolve(pianoSampler);
-    }
-    
-    pianoPromise = new Promise(async (resolve) => {
-        if (!volume) {
-            volume = new Tone.Volume(-6).toDestination();
-        }
-        const sampler = new Tone.Sampler({
-            urls: {
-                A0: "A0.mp3", C1: "C1.mp3", "D#1": "Ds1.mp3", "F#1": "Fs1.mp3", A1: "A1.mp3",
-                C2: "C2.mp3", "D#2": "Ds2.mp3", "F#2": "Fs2.mp3", A2: "A2.mp3", C3: "C3.mp3",
-                "D#3": "Ds3.mp3", "F#3": "Fs3.mp3", A3: "A3.mp3", C4: "C4.mp3", "D#4": "Ds4.mp3",
-                "F#4": "Fs4.mp3", A4: "A4.mp3", C5: "C5.mp3", "D#5": "Ds5.mp3", "F#5": "Fs5.mp3",
-                A5: "A5.mp3", C6: "C6.mp3", "D#6": "Ds6.mp3", "F#6": "Fs6.mp3", A6: "A6.mp3",
-                C7: "C7.mp3", "D#7": "Ds7.mp3", "F#7": "Fs7.mp3", A7: "A7.mp3", C8: "C8.mp3"
-            },
-            release: 1,
-            baseUrl: "https://tonejs.github.io/audio/salamander/",
-        }).connect(volume);
-
-        await Tone.loaded();
-        pianoSampler = sampler;
-        pianoPromise = null;
-        resolve(sampler);
-    });
-    return pianoPromise;
-}
 
 export function initSynth() {
     if (!synth) {
@@ -71,23 +35,18 @@ export function releaseNote(note: number) {
     if (!synth) return;
     const freq = Tone.Frequency(note, 'midi');
     // Only call triggerRelease on synths that have it (not PluckSynth)
-    if (synth instanceof Tone.PolySynth || synth instanceof Tone.Sampler) {
+    if (synth instanceof Tone.PolySynth) {
         synth.triggerRelease(freq, Tone.now());
     }
 }
 
-export async function setInstrument(instrumentName: string) {
+export function setInstrument(instrumentName: string) {
     if (!volume) {
         volume = new Tone.Volume(-6).toDestination();
     }
     
     if (synth) {
         synth.dispose();
-    }
-
-    if (instrumentName === 'grandPiano') {
-        synth = await getPianoSampler();
-        return;
     }
 
     const instrumentConstructor = instruments[instrumentName as keyof typeof instruments] || Tone.Synth;
@@ -101,9 +60,7 @@ export async function setInstrument(instrumentName: string) {
 
 export function setSustainDuration(duration: number) {
     if (synth) {
-        if (synth instanceof Tone.Sampler) {
-            synth.release = duration;
-        } else if ('envelope' in synth) {
+        if ('envelope' in synth) {
             (synth as any).set({ "envelope": { "release": duration } });
         }
     }
@@ -146,8 +103,8 @@ export function stopPlaying() {
         playbackPart = null;
     }
     if (synth) {
-        // releaseAll works for PolySynth and Sampler
-        if (synth instanceof Tone.PolySynth || synth instanceof Tone.Sampler) {
+        // releaseAll works for PolySynth
+        if (synth instanceof Tone.PolySynth) {
             synth.releaseAll();
         }
     }
