@@ -19,6 +19,8 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import type { KeyCount } from "@/app/page";
 import { NOTE_NAMES } from "@/lib/notes";
 import { scaleTypes, Scale } from "@/lib/scales";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 
 
 interface MainControlsProps {
@@ -42,6 +44,8 @@ interface MainControlsProps {
   onScaleRootChange: (value: string) => void;
   scaleType: Scale;
   onScaleTypeChange: (value: Scale) => void;
+  showNoteNames: boolean;
+  onShowNoteNamesChange: (checked: boolean) => void;
 }
 
 const keyCountOptions: { value: KeyCount, label: string }[] = [
@@ -71,6 +75,8 @@ export default function MainControls({
   onScaleRootChange,
   scaleType,
   onScaleTypeChange,
+  showNoteNames,
+  onShowNoteNamesChange,
 }: MainControlsProps) {
   return (
     <Card className="w-full shadow-lg">
@@ -215,6 +221,17 @@ export default function MainControls({
             </div>
 
             <Separator orientation="vertical" className="h-8 hidden md:block" />
+
+            {/* Show Notes Toggle */}
+            <div className="flex items-center space-x-2">
+                <Switch 
+                    id="show-notes" 
+                    checked={showNoteNames} 
+                    onCheckedChange={onShowNoteNamesChange}
+                    disabled={disabled}
+                />
+                <Label htmlFor="show-notes">Show Notes</Label>
+            </div>
 
             {/* Sustain Control */}
              <div className="flex items-center gap-3 w-full max-w-[150px]">

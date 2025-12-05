@@ -13,6 +13,7 @@ interface PianoKeyboardProps {
   rootNoteIndex: number;
   onNoteOn: (note: number, velocity?: number) => void;
   onNoteOff: (note: number) => void;
+  showNoteNames: boolean;
 }
 
 const Key = memo(({
@@ -24,7 +25,8 @@ const Key = memo(({
   onNoteOff,
   isBlack,
   whiteKeyIndex,
-  whiteKeyCount
+  whiteKeyCount,
+  showNoteNames,
 }: {
   pianoKey: PianoKey;
   isPressed: boolean;
@@ -35,6 +37,7 @@ const Key = memo(({
   isBlack: boolean;
   whiteKeyIndex: number;
   whiteKeyCount: number;
+  showNoteNames: boolean;
 }) => {
   const handleMouseDown = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -64,7 +67,7 @@ const Key = memo(({
   };
 
   const keyClasses = cn(
-    'absolute rounded-b-md border-b-4 transition-all duration-75',
+    'absolute rounded-b-md border-b-4 transition-all duration-75 flex items-end justify-center pb-2',
     isBlack
       ? 'w-[55%] h-[60%] bg-gray-800 border-gray-900 z-10 hover:bg-gray-700'
       : 'w-full h-full bg-white border-gray-200',
@@ -97,6 +100,14 @@ const Key = memo(({
       style={styles}
       aria-label={`Play note ${pianoKey.note}`}
     >
+      {showNoteNames && (
+        <span className={cn(
+          "pointer-events-none text-xs font-semibold",
+          isBlack ? "text-white/80" : "text-gray-500/80"
+        )}>
+          {pianoKey.note}
+        </span>
+      )}
     </button>
   );
 });
@@ -104,7 +115,7 @@ const Key = memo(({
 Key.displayName = 'Key';
 
 
-export default function PianoKeyboard({ keyCount, pressedKeys, highlightedKeys, rootNoteIndex, onNoteOn, onNoteOff }: PianoKeyboardProps) {
+export default function PianoKeyboard({ keyCount, pressedKeys, highlightedKeys, rootNoteIndex, onNoteOn, onNoteOff, showNoteNames }: PianoKeyboardProps) {
     const pianoKeys = getPianoKeys(keyCount);
     const whiteKeys = pianoKeys.filter(key => key.type === 'white');
 
@@ -140,6 +151,7 @@ export default function PianoKeyboard({ keyCount, pressedKeys, highlightedKeys, 
                     isBlack={isBlack}
                     whiteKeyIndex={whiteKeyIndex}
                     whiteKeyCount={whiteKeys.length}
+                    showNoteNames={showNoteNames}
                 />
             );
          })}

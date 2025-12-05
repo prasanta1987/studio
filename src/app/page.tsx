@@ -34,6 +34,7 @@ export default function Home() {
   const [scaleRoot, setScaleRoot] = useState<string>('C');
   const [scaleType, setScaleType] = useState<Scale>('major');
   const [highlightedKeys, setHighlightedKeys] = useState<number[]>([]);
+  const [showNoteNames, setShowNoteNames] = useState(false);
   const recording = useRef<RecordingEvent[]>([]);
   const notesOn = useRef<Map<number, { time: number, velocity: number }>>(new Map());
   const { toast } = useToast();
@@ -131,6 +132,10 @@ export default function Home() {
 
   const handleScaleTypeChange = (value: Scale) => {
     setScaleType(value);
+  };
+
+  const handleShowNoteNamesChange = (checked: boolean) => {
+    setShowNoteNames(checked);
   };
   
   const handleRecord = () => {
@@ -280,6 +285,8 @@ a.href = url;
             onScaleRootChange={handleScaleRootChange}
             scaleType={scaleType}
             onScaleTypeChange={handleScaleTypeChange}
+            showNoteNames={showNoteNames}
+            onShowNoteNamesChange={handleShowNoteNamesChange}
           />
           <div className="mt-6 w-full relative" style={{aspectRatio: '5 / 1'}}>
             <PianoKeyboard
@@ -289,6 +296,7 @@ a.href = url;
               rootNoteIndex={rootNoteIndex}
               onNoteOn={onNoteOn}
               onNoteOff={onNoteOff}
+              showNoteNames={showNoteNames}
             />
           </div>
         </div>
