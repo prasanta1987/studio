@@ -30,7 +30,7 @@ export default function Home() {
   const [isRecording, setIsRecording] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
-  const [keyCount, setKeyCount] = useState<KeyCount>(88);
+  const [keyCount, setKeyCount] = useState<KeyCount>(37);
   const [scaleRoot, setScaleRoot] = useState<string>('C');
   const [scaleType, setScaleType] = useState<Scale>('major');
   const [highlightedKeys, setHighlightedKeys] = useState<number[]>([]);

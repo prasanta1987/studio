@@ -11,9 +11,9 @@ export type PianoKey = {
 export const NOTE_NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
 
 export const KEY_RANGES: Record<KeyCount, { start: number; count: number }> = {
-  88: { start: 24, count: 88 }, // C1 to C9
-  61: { start: 36, count: 61 }, // C2 to C7
   37: { start: 48, count: 37 }, // C3 to C6
+  61: { start: 36, count: 61 }, // C2 to C7
+  88: { start: 24, count: 88 }, // C1 to C9
 };
 
 export const getPianoKeys = (keyCount: KeyCount): PianoKey[] => {
