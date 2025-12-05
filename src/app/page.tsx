@@ -395,11 +395,6 @@ a.href = url;
             onThemeChange={handleThemeChange}
           />
           <div className="mt-2 w-full relative">
-            <div className="absolute -top-10 left-1/2 -translate-x-1/2 w-full text-center">
-              <p className="text-2xl font-bold text-accent transition-opacity duration-200 h-8">
-                {currentChord}
-              </p>
-            </div>
             <div className="mt-6 w-full relative" style={{aspectRatio: '5 / 1'}}>
                 <PianoKeyboard
                 keyCount={keyCount}
@@ -413,20 +408,21 @@ a.href = url;
                 />
             </div>
           </div>
-          {isPitchMonitoring && (
-            <div className="mt-4 text-center">
-              <p className="text-lg font-semibold">
-                Detected Frequency: 
-                <span className="ml-2 font-mono text-accent">
-                  {detectedFrequency ? `${detectedFrequency.toFixed(2)} Hz` : '...'}
-                </span>
+          <div className="mt-4 text-center">
+            {isPitchMonitoring && (
+                <p className="text-lg font-semibold">
+                  Detected Frequency: 
+                  <span className="ml-2 font-mono text-accent">
+                    {detectedFrequency ? `${detectedFrequency.toFixed(2)} Hz` : '...'}
+                  </span>
+                </p>
+            )}
+             <p className="text-2xl font-bold text-accent transition-opacity duration-200 h-8 mt-2">
+                {currentChord}
               </p>
-            </div>
-          )}
+          </div>
         </div>
       </main>
     </div>
   );
 }
-
-    
