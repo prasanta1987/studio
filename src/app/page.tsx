@@ -39,7 +39,7 @@ export default function Home() {
   const [isPitchMonitoring, setIsPitchMonitoring] = useState(false);
   const [detectedNote, setDetectedNote] = useState<number | null>(null);
   const [detectedFrequency, setDetectedFrequency] = useState<number | null>(null);
-  const [theme, setTheme] = useState<Theme>('dark');
+  const [theme, setTheme] = useState<Theme>('light');
 
   const recording = useRef<RecordingEvent[]>([]);
   const notesOn = useRef<Map<number, { time: number, velocity: number }>>(new Map());
