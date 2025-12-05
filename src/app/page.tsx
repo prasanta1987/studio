@@ -45,6 +45,7 @@ export default function Home() {
   const pitchDetector = useRef<any>(null);
   const analyser = useRef<Tone.Analyser | null>(null);
   const animationFrameId = useRef<number | null>(null);
+  const noiseGate = useRef<Tone.Gate | null>(null);
 
   const { toast } = useToast();
 
@@ -240,7 +241,10 @@ export default function Home() {
       await mic.current.open();
       
       analyser.current = new Tone.Analyser('waveform', 1024);
-      mic.current.connect(analyser.current);
+      noiseGate.current = new Tone.Gate(-40, 0.1); // Threshold, attack/release time
+      mic.current.connect(noiseGate.current);
+      noiseGate.current.connect(analyser.current);
+      
       pitchDetector.current = pitchfinder.YIN({ sampleRate: Tone.context.sampleRate });
 
       setIsPitchMonitoring(true);
@@ -271,6 +275,10 @@ export default function Home() {
     if (analyser.current) {
         analyser.current.dispose();
         analyser.current = null;
+    }
+    if (noiseGate.current) {
+        noiseGate.current.dispose();
+        noiseGate.current = null;
     }
     setIsPitchMonitoring(false);
     setDetectedNote(null);
