@@ -13,6 +13,7 @@ import { useToast } from '@/hooks/use-toast';
 import { getPianoKeys, NOTE_NAMES, KEY_RANGES, midiToNoteName } from '@/lib/notes';
 import { getScaleNotes, Scale } from '@/lib/scales';
 import { Usb } from 'lucide-react';
+import pitchfinder from 'pitchfinder';
 
 type RecordingEvent = {
   note: number;
@@ -39,6 +40,10 @@ export default function Home() {
 
   const recording = useRef<RecordingEvent[]>([]);
   const notesOn = useRef<Map<number, { time: number, velocity: number }>>(new Map());
+  const mic = useRef<Tone.UserMedia | null>(null);
+  const pitchDetector = useRef<any>(null);
+  const analyser = useRef<Tone.Analyser | null>(null);
+  const animationFrameId = useRef<number | null>(null);
 
   const { toast } = useToast();
 
@@ -217,7 +222,7 @@ export default function Home() {
     const blob = new Blob([midiData], { type: 'audio/midi' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
-a.href = url;
+    a.href = url;
     a.download = 'virtuoso-keys-recording.mid';
     a.click();
     URL.revokeObjectURL(url);
@@ -228,14 +233,77 @@ a.href = url;
     });
   };
 
-  const handlePitchMonitorToggle = async () => {
+  const startPitchDetection = async () => {
+    try {
+      mic.current = new Tone.UserMedia();
+      await mic.current.open();
+      
+      analyser.current = new Tone.Analyser('fft', 2048);
+      mic.current.connect(analyser.current);
+      pitchDetector.current = pitchfinder.YIN({ sampleRate: Tone.context.sampleRate });
+
+      setIsPitchMonitoring(true);
+      toast({
+        title: 'Pitch Monitor Enabled',
+        description: 'Sing or play an instrument into your microphone.',
+      });
+      detectPitch();
+    } catch (err) {
+      console.error(err);
+      toast({
+        title: 'Microphone Error',
+        description: 'Could not access the microphone. Please check your browser permissions.',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const stopPitchDetection = () => {
+    if (animationFrameId.current) {
+      cancelAnimationFrame(animationFrameId.current);
+      animationFrameId.current = null;
+    }
+    if (mic.current) {
+      mic.current.close();
+      mic.current = null;
+    }
+    if (analyser.current) {
+        analyser.current.dispose();
+        analyser.current = null;
+    }
+    setIsPitchMonitoring(false);
+    setDetectedNote(null);
     toast({
       title: 'Pitch Monitor Disabled',
-      description: 'This feature is temporarily unavailable.',
-      variant: 'destructive',
     });
   };
 
+  const detectPitch = () => {
+    if (analyser.current && pitchDetector.current) {
+      const fftData = analyser.current.getValue();
+      if (fftData instanceof Float32Array) {
+        const pitch = pitchDetector.current(fftData);
+        if (pitch) {
+          const midi = Tone.Frequency(pitch, 'hz').toMidi();
+          if (midi !== detectedNote) {
+            setDetectedNote(Math.round(midi));
+          }
+        } else {
+          setDetectedNote(null);
+        }
+      }
+    }
+    animationFrameId.current = requestAnimationFrame(detectPitch);
+  };
+  
+  const handlePitchMonitorToggle = () => {
+    if (!isInitialized) return;
+    if (isPitchMonitoring) {
+      stopPitchDetection();
+    } else {
+      startPitchDetection();
+    }
+  };
 
   const getNoteName = (midi: number) => {
     const key = PIANO_KEYS.find(k => k.midi === midi);
