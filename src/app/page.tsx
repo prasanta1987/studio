@@ -37,6 +37,7 @@ export default function Home() {
   const [showNoteNames, setShowNoteNames] = useState(false);
   const [isPitchMonitoring, setIsPitchMonitoring] = useState(false);
   const [detectedNote, setDetectedNote] = useState<number | null>(null);
+  const [detectedFrequency, setDetectedFrequency] = useState<number | null>(null);
 
   const recording = useRef<RecordingEvent[]>([]);
   const notesOn = useRef<Map<number, { time: number, velocity: number }>>(new Map());
@@ -273,6 +274,7 @@ export default function Home() {
     }
     setIsPitchMonitoring(false);
     setDetectedNote(null);
+    setDetectedFrequency(null);
     toast({
       title: 'Pitch Monitor Disabled',
     });
@@ -283,6 +285,7 @@ export default function Home() {
       const fftData = analyser.current.getValue();
       if (fftData instanceof Float32Array) {
         const pitch = pitchDetector.current(fftData);
+        setDetectedFrequency(pitch);
         if (pitch) {
           const midi = Tone.Frequency(pitch, 'hz').toMidi();
           setDetectedNote(prevNote => {
@@ -368,6 +371,16 @@ export default function Home() {
               detectedNote={detectedNote}
             />
           </div>
+          {isPitchMonitoring && (
+            <div className="mt-4 text-center">
+              <p className="text-lg font-semibold">
+                Detected Frequency: 
+                <span className="ml-2 font-mono text-accent">
+                  {detectedFrequency ? `${detectedFrequency.toFixed(2)} Hz` : '...'}
+                </span>
+              </p>
+            </div>
+          )}
         </div>
       </main>
     </div>
