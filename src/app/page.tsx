@@ -23,6 +23,7 @@ type RecordingEvent = {
 };
 
 export type KeyCount = 37 | 61 | 88;
+export type Theme = 'light' | 'dark';
 
 export default function Home() {
   const [pressedKeys, setPressedKeys] = useState<Set<number>>(new Set());
@@ -38,6 +39,7 @@ export default function Home() {
   const [isPitchMonitoring, setIsPitchMonitoring] = useState(false);
   const [detectedNote, setDetectedNote] = useState<number | null>(null);
   const [detectedFrequency, setDetectedFrequency] = useState<number | null>(null);
+  const [theme, setTheme] = useState<Theme>('dark');
 
   const recording = useRef<RecordingEvent[]>([]);
   const notesOn = useRef<Map<number, { time: number, velocity: number }>>(new Map());
@@ -60,6 +62,12 @@ export default function Home() {
     const scaleNotes = getScaleNotes(rootNoteMidi, scaleType, keyCount);
     setHighlightedKeys(scaleNotes);
   }, [scaleRoot, scaleType, keyCount]);
+  
+  useEffect(() => {
+    const root = window.document.documentElement;
+    root.classList.remove('light', 'dark');
+    root.classList.add(theme);
+  }, [theme]);
 
   const onNoteOn = useCallback((note: number, velocity: number) => {
     if (!isInitialized) return;
@@ -137,6 +145,10 @@ export default function Home() {
 
   const handleShowNoteNamesChange = (checked: boolean) => {
     setShowNoteNames(checked);
+  };
+
+  const handleThemeChange = () => {
+    setTheme(theme === 'light' ? 'dark' : 'light');
   };
   
   const handleRecord = () => {
@@ -224,7 +236,7 @@ export default function Home() {
     const blob = new Blob([midiData], { type: 'audio/midi' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
-    a.href = url;
+a.href = url;
     a.download = 'virtuoso-keys-recording.mid';
     a.click();
     URL.revokeObjectURL(url);
@@ -366,6 +378,8 @@ export default function Home() {
             onShowNoteNamesChange={handleShowNoteNamesChange}
             isPitchMonitoring={isPitchMonitoring}
             onPitchMonitorToggle={handlePitchMonitorToggle}
+            theme={theme}
+            onThemeChange={handleThemeChange}
           />
           <div className="mt-6 w-full relative" style={{aspectRatio: '5 / 1'}}>
             <PianoKeyboard

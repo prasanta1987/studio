@@ -2,7 +2,7 @@
 "use client"
 
 import * as React from "react"
-import { Volume2, Music, Circle, Play, Square, Pause, Waves, Download, Keyboard, Mic } from "lucide-react"
+import { Volume2, Music, Circle, Play, Square, Pause, Waves, Download, Keyboard, Mic, Sun, Moon } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -16,7 +16,7 @@ import { Slider } from "@/components/ui/slider"
 import { Card, CardContent } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
-import type { KeyCount } from "@/app/page";
+import type { KeyCount, Theme } from "@/app/page";
 import { NOTE_NAMES } from "@/lib/notes";
 import { scaleTypes, Scale } from "@/lib/scales";
 import { Switch } from "@/components/ui/switch";
@@ -45,6 +45,8 @@ interface MainControlsProps {
   onShowNoteNamesChange: (checked: boolean) => void;
   isPitchMonitoring: boolean;
   onPitchMonitorToggle: () => void;
+  theme: Theme;
+  onThemeChange: () => void;
 }
 
 const keyCountOptions: { value: KeyCount, label: string }[] = [
@@ -73,14 +75,34 @@ export default function MainControls({
   onScaleTypeChange,
   showNoteNames,
   onShowNoteNamesChange,
-isPitchMonitoring,
+  isPitchMonitoring,
   onPitchMonitorToggle,
+  theme,
+  onThemeChange,
 }: MainControlsProps) {
   return (
     <Card className="w-full shadow-lg bg-card/80 backdrop-blur-sm border-border/50">
       <CardContent className="p-3">
         <TooltipProvider>
           <div className="flex flex-wrap items-center justify-center gap-4 md:gap-6">
+            {/* Theme Toggle */}
+             <Tooltip>
+                <TooltipTrigger asChild>
+                    <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={onThemeChange}
+                        aria-label="Toggle Theme"
+                    >
+                        <Sun className="h-[1.2rem] w-[1.2rem] rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
+                        <Moon className="absolute h-[1.2rem] w-[1.2rem] rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
+                    </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                    <p>Toggle Theme</p>
+                </TooltipContent>
+            </Tooltip>
+            
             {/* Key Count Selector */}
             <div className="flex items-center gap-2">
                 <Keyboard className="text-muted-foreground" />
