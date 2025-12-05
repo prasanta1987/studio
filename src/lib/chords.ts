@@ -2,8 +2,8 @@
 import { NOTE_NAMES } from './notes';
 
 const CHORD_INTERVALS: { [name: string]: number[] } = {
-  '': [0, 4, 7], // Major
-  'm': [0, 3, 7], // Minor
+  'major': [0, 4, 7], // Major
+  'minor': [0, 3, 7], // Minor
   'dim': [0, 3, 6], // Diminished
   'aug': [0, 4, 8], // Augmented
   '7': [0, 4, 7, 10], // Dominant 7th

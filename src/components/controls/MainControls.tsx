@@ -80,6 +80,18 @@ export default function MainControls({
   theme,
   onThemeChange,
 }: MainControlsProps) {
+  const [isInstrumentLoading, setIsInstrumentLoading] = React.useState(false);
+
+  const handleInstrumentChange = async (value: string) => {
+    if (value === 'grandPiano') {
+      setIsInstrumentLoading(true);
+    }
+    await onInstrumentChange(value);
+    if (value === 'grandPiano') {
+      setIsInstrumentLoading(false);
+    }
+  }
+
   return (
     <Card className="w-full shadow-lg bg-card/80 backdrop-blur-sm border-border/50">
       <CardContent className="p-3">
@@ -123,14 +135,14 @@ export default function MainControls({
             {/* Tone Selector */}
             <div className="flex items-center gap-2">
               <Music className="text-muted-foreground" />
-              <Select value={instrument} onValueChange={onInstrumentChange} disabled={disabled}>
+              <Select value={instrument} onValueChange={handleInstrumentChange} disabled={disabled || isInstrumentLoading}>
                 <SelectTrigger className="w-[150px]">
                   <SelectValue placeholder="Tone" />
                 </SelectTrigger>
                 <SelectContent>
                   {instruments.map((inst) => (
                     <SelectItem key={inst.value} value={inst.value}>
-                      {inst.label}
+                       {isInstrumentLoading && inst.value === 'grandPiano' ? 'Loading...' : inst.label}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -276,7 +288,7 @@ export default function MainControls({
             <div className="flex items-center gap-3 w-full max-w-[150px]">
               <Volume2 className="text-muted-foreground" />
               <Slider
-                defaultValue={[75]}
+                defaultValue={[100]}
                 max={100}
                 step={1}
                 onValueChange={(value) => onVolumeChange(value)}

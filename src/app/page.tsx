@@ -131,9 +131,9 @@ export default function Home() {
     };
   }, []);
 
-  const handleInstrumentChange = (value: string) => {
+  const handleInstrumentChange = async (value: string) => {
     setCurrentInstrument(value);
-    setInstrument(value);
+    await setInstrument(value);
   };
 
   const handleVolumeChange = (value: number[]) => {

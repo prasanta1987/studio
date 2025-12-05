@@ -1,7 +1,7 @@
 
 import * as Tone from 'tone';
 
-let synth: Tone.PolySynth<any> | Tone.PluckSynth | null = null;
+let synth: Tone.PolySynth<any> | Tone.PluckSynth | Tone.Sampler | null = null;
 let volume: Tone.Volume | null = null;
 let playbackPart: Tone.Part | null = null;
 
@@ -11,24 +11,57 @@ const instruments = {
     fm: Tone.FMSynth,
     membrane: Tone.MembraneSynth,
     pluck: Tone.PluckSynth,
-    grandPiano: Tone.Synth,
+    grandPiano: Tone.Sampler,
 };
 
-const instrumentConfigs = {
-    grandPiano: {
-        oscillator: {
-            type: "fatsawtooth",
-            count: 3,
-            spread: 30
-        },
-        envelope: {
-            attack: 0.01,
-            decay: 0.2,
-            sustain: 0.5,
-            release: 1.5,
+let pianoSampler: Tone.Sampler | null = null;
+
+async function getPianoSampler() {
+    if (!pianoSampler) {
+        if (!volume) {
+            volume = new Tone.Volume(-6).toDestination();
         }
+        pianoSampler = new Tone.Sampler({
+            urls: {
+                A0: "A0.mp3",
+                C1: "C1.mp3",
+                "D#1": "Ds1.mp3",
+                "F#1": "Fs1.mp3",
+                A1: "A1.mp3",
+                C2: "C2.mp3",
+                "D#2": "Ds2.mp3",
+                "F#2": "Fs2.mp3",
+                A2: "A2.mp3",
+                C3: "C3.mp3",
+                "D#3": "Ds3.mp3",
+                "F#3": "Fs3.mp3",
+                A3: "A3.mp3",
+                C4: "C4.mp3",
+                "D#4": "Ds4.mp3",
+                "F#4": "Fs4.mp3",
+                A4: "A4.mp3",
+                C5: "C5.mp3",
+                "D#5": "Ds5.mp3",
+                "F#5": "Fs5.mp3",
+                A5: "A5.mp3",
+                C6: "C6.mp3",
+                "D#6": "Ds6.mp3",
+                "F#6": "Fs6.mp3",
+                A6: "A6.mp3",
+                C7: "C7.mp3",
+                "D#7": "Ds7.mp3",
+                "F#7": "Fs7.mp3",
+                A7: "A7.mp3",
+                C8: "C8.mp3"
+            },
+            release: 1,
+            baseUrl: "https://tonejs.github.io/audio/salamander/",
+        }).connect(volume);
+        await Tone.loaded();
     }
+    return pianoSampler;
 }
+
 
 export function initSynth() {
     if (!synth) {
@@ -42,22 +75,23 @@ export function playNote(note: number, velocity: number) {
     if (!synth) initSynth();
     const freq = Tone.Frequency(note, 'midi');
     const vel = velocity / 127;
-    if (synth instanceof Tone.PluckSynth) {
-      synth.triggerAttack(freq, Tone.now());
+    
+    if (synth instanceof Tone.Sampler || synth instanceof Tone.PluckSynth) {
+      synth.triggerAttack(freq, Tone.now(), vel);
     } else if (synth instanceof Tone.PolySynth) {
-      synth?.triggerAttack(freq, Tone.now(), vel);
+      synth.triggerAttack(freq, Tone.now(), vel);
     }
 }
 
 export function releaseNote(note: number) {
     if (!synth) return;
     const freq = Tone.Frequency(note, 'midi');
-    if (synth instanceof Tone.PolySynth) {
-        synth?.triggerRelease(freq, Tone.now());
+    if (synth instanceof Tone.PolySynth || synth instanceof Tone.Sampler) {
+        synth.triggerRelease(freq, Tone.now());
     }
 }
 
-export function setInstrument(instrumentName: string) {
+export async function setInstrument(instrumentName: string) {
     if (!volume) {
         volume = new Tone.Volume(-6).toDestination();
     }
@@ -66,25 +100,30 @@ export function setInstrument(instrumentName: string) {
         synth.dispose();
     }
 
+    if (instrumentName === 'grandPiano') {
+        synth = await getPianoSampler();
+        return;
+    }
+
     const instrumentConstructor = instruments[instrumentName as keyof typeof instruments] || Tone.Synth;
     
     if (instrumentName === 'pluck') {
         synth = new Tone.PluckSynth().connect(volume);
     } else if (instrumentName === 'membrane') {
-        // MembraneSynth is monophonic, so it should be wrapped in PolySynth for polyphony
         synth = new Tone.PolySynth(Tone.MembraneSynth).connect(volume);
     } else {
-        const config = instrumentName === 'grandPiano' 
-            ? instrumentConfigs.grandPiano 
-            : {};
-        synth = new Tone.PolySynth(instrumentConstructor, config).connect(volume);
+        synth = new Tone.PolySynth(instrumentConstructor).connect(volume);
     }
 }
 
 
 export function setSustainDuration(duration: number) {
     if (synth && 'set' in synth && typeof (synth as any).set === 'function') {
-        (synth as any).set({ "envelope": { "release": duration } });
+        if (synth instanceof Tone.Sampler) {
+            synth.release = duration;
+        } else {
+            (synth as any).set({ "envelope": { "release": duration } });
+        }
     }
 }
 
@@ -103,8 +142,8 @@ export function playRecording(events: {note: number; time: number; duration: num
     if (!synth) return;
 
     playbackPart = new Tone.Part((time, value) => {
-        if (synth instanceof Tone.PluckSynth) {
-             synth?.triggerAttack(Tone.Frequency(value.note, 'midi'), time);
+        if (synth instanceof Tone.PluckSynth || synth instanceof Tone.Sampler) {
+             synth?.triggerAttackRelease(Tone.Frequency(value.note, 'midi'), value.duration, time, value.velocity);
         } else if (synth instanceof Tone.PolySynth) {
             synth?.triggerAttackRelease(Tone.Frequency(value.note, 'midi'), value.duration, time, value.velocity);
         }
@@ -126,7 +165,7 @@ export function stopPlaying() {
         playbackPart.dispose();
         playbackPart = null;
     }
-    if (synth instanceof Tone.PolySynth) {
+    if (synth instanceof Tone.PolySynth || synth instanceof Tone.Sampler) {
         synth?.releaseAll();
     }
     
