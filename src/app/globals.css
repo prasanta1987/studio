@@ -43,25 +43,25 @@ body {
     --sidebar-ring: 217.2 91.2% 59.8%;
   }
   .dark {
-    --background: 225 20% 10%;
+    --background: 220 14% 12%; /* Dark charcoal background */
     --foreground: 0 0% 98%;
-    --card: 225 20% 10%;
+    --card: 220 14% 15%; /* Slightly lighter card background */
     --card-foreground: 0 0% 98%;
-    --popover: 225 20% 10%;
+    --popover: 220 14% 10%;
     --popover-foreground: 0 0% 98%;
-    --primary: 225 43% 70%;
-    --primary-foreground: 225 43% 10%;
-    --secondary: 225 20% 15%;
+    --primary: 25 95% 53%; /* FL Studio Orange */
+    --primary-foreground: 0 0% 100%;
+    --secondary: 220 14% 20%;
     --secondary-foreground: 0 0% 98%;
-    --muted: 225 20% 15%;
+    --muted: 220 14% 20%;
     --muted-foreground: 0 0% 63.9%;
-    --accent: 18 100% 60%;
-    --accent-foreground: 0 0% 98%;
+    --accent: 25 95% 53%; /* FL Studio Orange */
+    --accent-foreground: 0 0% 100%;
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 0 0% 98%;
-    --border: 225 20% 20%;
-    --input: 225 20% 20%;
-    --ring: 18 100% 60%;
+    --border: 220 14% 25%;
+    --input: 220 14% 25%;
+    --ring: 25 95% 53%;
     --chart-1: 220 70% 50%;
     --chart-2: 160 60% 45%;
     --chart-3: 30 80% 55%;

@@ -73,11 +73,11 @@ export default function MainControls({
   onScaleTypeChange,
   showNoteNames,
   onShowNoteNamesChange,
-  isPitchMonitoring,
+isPitchMonitoring,
   onPitchMonitorToggle,
 }: MainControlsProps) {
   return (
-    <Card className="w-full shadow-lg">
+    <Card className="w-full shadow-lg bg-card/80 backdrop-blur-sm border-border/50">
       <CardContent className="p-3">
         <TooltipProvider>
           <div className="flex flex-wrap items-center justify-center gap-4 md:gap-6">
