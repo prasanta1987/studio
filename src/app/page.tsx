@@ -10,8 +10,9 @@ import PianoKeyboard from '@/components/piano/PianoKeyboard';
 import MainControls from '@/components/controls/MainControls';
 import { Logo } from '@/components/Logo';
 import { useToast } from '@/hooks/use-toast';
-import { getPianoKeys, NOTE_NAMES, KEY_RANGES, midiToNoteName } from '@/lib/notes';
+import { getPianoKeys, NOTE_NAMES, KEY_RANGES } from '@/lib/notes';
 import { getScaleNotes, Scale } from '@/lib/scales';
+import { detectChord } from '@/lib/chords';
 import { Usb } from 'lucide-react';
 import pitchfinder from 'pitchfinder';
 
@@ -40,6 +41,7 @@ export default function Home() {
   const [detectedNote, setDetectedNote] = useState<number | null>(null);
   const [detectedFrequency, setDetectedFrequency] = useState<number | null>(null);
   const [theme, setTheme] = useState<Theme>('light');
+  const [currentChord, setCurrentChord] = useState<string | null>(null);
 
   const recording = useRef<RecordingEvent[]>([]);
   const notesOn = useRef<Map<number, { time: number, velocity: number }>>(new Map());
@@ -68,6 +70,17 @@ export default function Home() {
     root.classList.remove('light', 'dark');
     root.classList.add(theme);
   }, [theme]);
+  
+  useEffect(() => {
+    const notes = Array.from(pressedKeys);
+    if (notes.length >= 3) {
+      const chord = detectChord(notes);
+      setCurrentChord(chord);
+    } else {
+      setCurrentChord(null);
+    }
+  }, [pressedKeys]);
+
 
   const onNoteOn = useCallback((note: number, velocity: number) => {
     if (!isInitialized) return;
@@ -381,17 +394,24 @@ a.href = url;
             theme={theme}
             onThemeChange={handleThemeChange}
           />
-          <div className="mt-6 w-full relative" style={{aspectRatio: '5 / 1'}}>
-            <PianoKeyboard
-              keyCount={keyCount}
-              pressedKeys={pressedKeys}
-              highlightedKeys={highlightedKeys}
-              rootNoteIndex={rootNoteIndex}
-              onNoteOn={onNoteOn}
-              onNoteOff={onNoteOff}
-              showNoteNames={showNoteNames}
-              detectedNote={detectedNote}
-            />
+          <div className="mt-2 w-full relative">
+            <div className="absolute -top-10 left-1/2 -translate-x-1/2 w-full text-center">
+              <p className="text-2xl font-bold text-accent transition-opacity duration-200 h-8">
+                {currentChord}
+              </p>
+            </div>
+            <div className="mt-6 w-full relative" style={{aspectRatio: '5 / 1'}}>
+                <PianoKeyboard
+                keyCount={keyCount}
+                pressedKeys={pressedKeys}
+                highlightedKeys={highlightedKeys}
+                rootNoteIndex={rootNoteIndex}
+                onNoteOn={onNoteOn}
+                onNoteOff={onNoteOff}
+                showNoteNames={showNoteNames}
+                detectedNote={detectedNote}
+                />
+            </div>
           </div>
           {isPitchMonitoring && (
             <div className="mt-4 text-center">
@@ -408,3 +428,5 @@ a.href = url;
     </div>
   );
 }
+
+    
