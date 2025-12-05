@@ -3,7 +3,6 @@ import * as Tone from 'tone';
 
 let synth: Tone.PolySynth<any> | Tone.PluckSynth | null = null;
 let volume: Tone.Volume | null = null;
-let rhythmSeq: Tone.Sequence | null = null;
 let playbackPart: Tone.Part | null = null;
 
 const instruments = {
@@ -30,32 +29,6 @@ const instrumentConfigs = {
         }
     }
 }
-
-
-const rhythms = {
-    none: null,
-    fourOnTheFloor: (kick: Tone.MembraneSynth, hihat: Tone.MetalSynth) => new Tone.Sequence((time, note) => {
-        if (note.kick) kick.triggerAttackRelease('C1', '8n', time);
-        if (note.hihat) hihat.triggerAttackRelease('C6', '16n', time);
-    }, [
-        { kick: true, hihat: true }, { hihat: true }, { kick: true, hihat: true }, { hihat: true },
-        { kick: true, hihat: true }, { hihat: true }, { kick: true, hihat: true }, { hihat: true }
-    ], '4n'),
-    popRock: (kick: Tone.MembraneSynth, hihat: Tone.MetalSynth) => new Tone.Sequence((time, note) => {
-        if (note.kick) kick.triggerAttackRelease('C1', '8n', time);
-        if (note.hihat) hihat.triggerAttackRelease('C6', '16n', time);
-    }, [
-        { kick: true, hihat: true }, { hihat: true }, { kick: true, hihat: true }, { hihat: true },
-        { kick: true, hihat: true }, { hihat: true }, { kick: true, hihat: true }, { hihat: true }
-    ], '8n'),
-    bossaNova: (kick: Tone.MembraneSynth, hihat: Tone.MetalSynth) => new Tone.Sequence((time, note) => {
-        if (note.kick) kick.triggerAttackRelease('C1', '8n', time);
-        if (note.hihat) hihat.triggerAttackRelease('C6', '16n', time);
-    }, [
-        { kick: true, hihat: true }, { hihat: true }, { hihat: true }, { kick: true, hihat: true },
-        { hihat: true }, { hihat: true }, { kick: true, hihat: true }, { hihat: true }
-    ], '8n'),
-};
 
 export function initSynth() {
     if (!synth) {
@@ -123,38 +96,6 @@ export function setVolume(value: number) {
     volume.volume.value = db;
 }
 
-
-export function playRhythm(rhythmName: string) {
-    if (rhythmSeq) {
-        rhythmSeq.stop();
-        rhythmSeq.dispose();
-    }
-    const rhythmPattern = rhythms[rhythmName as keyof typeof rhythms];
-
-    if (rhythmPattern) {
-        const kick = new Tone.MembraneSynth().toDestination();
-        const hihat = new Tone.MetalSynth({ volume: -12 }).toDestination();
-        rhythmSeq = rhythmPattern(kick, hihat);
-        rhythmSeq.start(0);
-        Tone.Transport.start();
-    } else {
-        if (Tone.Transport.state === 'started' && playbackPart === null) {
-            // only stop if not playing a recording
-        }
-    }
-}
-
-export function stopRhythm() {
-    if (rhythmSeq) {
-        rhythmSeq.stop(0);
-        rhythmSeq.dispose();
-        rhythmSeq = null;
-    }
-    if (Tone.Transport.schedule.length === 0) {
-        Tone.Transport.stop();
-    }
-}
-
 export function playRecording(events: {note: number; time: number; duration: number, velocity: number}[], onEnd: () => void) {
     if (playbackPart) {
         playbackPart.dispose();
@@ -189,12 +130,8 @@ export function stopPlaying() {
         synth?.releaseAll();
     }
     
-    // Only stop transport if no rhythm is playing
-    if (!rhythmSeq) {
-        Tone.Transport.stop();
-        Tone.Transport.cancel();
-    }
+    Tone.Transport.stop();
+    Tone.Transport.cancel();
 }
 
 export const getInstruments = () => Object.keys(instruments).map(key => ({ value: key, label: key.charAt(0).toUpperCase() + key.slice(1).replace(/([A-Z])/g, ' $1').trim() }));
-export const getRhythms = () => Object.keys(rhythms).map(key => ({ value: key, label: key.charAt(0).toUpperCase() + key.slice(1).replace(/([A-Z])/g, ' $1').trim() }));

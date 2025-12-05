@@ -2,7 +2,7 @@
 "use client"
 
 import * as React from "react"
-import { Volume2, Music, Drum, Circle, Play, Square, Pause, Waves, Download, Keyboard } from "lucide-react"
+import { Volume2, Music, Circle, Play, Square, Pause, Waves, Download, Keyboard } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -27,9 +27,6 @@ interface MainControlsProps {
   instrument: string;
   onInstrumentChange: (value: string) => void;
   instruments: { value: string; label: string }[];
-  rhythm: string;
-  onRhythmChange: (value: string) => void;
-  rhythms: { value: string; label: string }[];
   onVolumeChange: (value: number[]) => void;
   onSustainChange: (value: number[]) => void;
   isRecording: boolean;
@@ -58,9 +55,6 @@ export default function MainControls({
   instrument,
   onInstrumentChange,
   instruments,
-  rhythm,
-  onRhythmChange,
-  rhythms,
   onVolumeChange,
   onSustainChange,
   isRecording,
@@ -111,23 +105,6 @@ export default function MainControls({
                   {instruments.map((inst) => (
                     <SelectItem key={inst.value} value={inst.value}>
                       {inst.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Rhythm Selector */}
-            <div className="flex items-center gap-2">
-              <Drum className="text-muted-foreground" />
-              <Select value={rhythm} onValueChange={onRhythmChange} disabled={disabled}>
-                <SelectTrigger className="w-[150px]">
-                  <SelectValue placeholder="Rhythm" />
-                </SelectTrigger>
-                <SelectContent>
-                  {rhythms.map((r) => (
-                    <SelectItem key={r.value} value={r.value}>
-                      {r.label}
                     </SelectItem>
                   ))}
                 </SelectContent>

@@ -5,7 +5,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import * as Tone from 'tone';
 import { Midi } from '@tonejs/midi';
 import { useMidi } from '@/hooks/useMidi';
-import { initSynth, playNote, releaseNote, setInstrument, setVolume, playRhythm, stopRhythm, getInstruments, getRhythms, playRecording, stopPlaying, setSustainDuration } from '@/lib/synth';
+import { initSynth, playNote, releaseNote, setInstrument, setVolume, playRecording, stopPlaying, setSustainDuration, getInstruments } from '@/lib/synth';
 import PianoKeyboard from '@/components/piano/PianoKeyboard';
 import MainControls from '@/components/controls/MainControls';
 import { Logo } from '@/components/Logo';
@@ -26,7 +26,6 @@ export type KeyCount = 37 | 61 | 88;
 export default function Home() {
   const [pressedKeys, setPressedKeys] = useState<Set<number>>(new Set());
   const [instrument, setCurrentInstrument] = useState<string>('default');
-  const [rhythm, setCurrentRhythm] = useState<string>('none');
   const [isRecording, setIsRecording] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
@@ -105,15 +104,6 @@ export default function Home() {
     setInstrument(value);
   };
 
-  const handleRhythmChange = (value: string) => {
-    setCurrentRhythm(value);
-    if (value === 'none') {
-      stopRhythm();
-    } else {
-      playRhythm(value);
-    }
-  };
-
   const handleVolumeChange = (value: number[]) => {
     setVolume(value[0]);
   };
@@ -150,8 +140,7 @@ export default function Home() {
 
     if (isRecording) {
       setIsRecording(false);
-      // Don't stop transport if a rhythm is playing
-      if (rhythm === 'none' && !isPlaying) {
+      if (!isPlaying) {
         Tone.Transport.stop();
       }
       toast({
@@ -194,9 +183,7 @@ export default function Home() {
       setIsPlaying(true);
       playRecording(recording.current, () => {
         setIsPlaying(false)
-        if (rhythm === 'none') {
-          Tone.Transport.stop();
-        }
+        Tone.Transport.stop();
       });
     }
   };
@@ -268,9 +255,6 @@ a.href = url;
             instrument={instrument}
             onInstrumentChange={handleInstrumentChange}
             instruments={getInstruments()}
-            rhythm={rhythm}
-            onRhythmChange={handleRhythmChange}
-            rhythms={getRhythms()}
             onVolumeChange={handleVolumeChange}
             onSustainChange={handleSustainChange}
             isRecording={isRecording}
