@@ -63,14 +63,14 @@ export function playNote(note: number, velocity: number) {
     const freq = Tone.Frequency(note, 'midi');
     const vel = velocity / 127;
     
-    if (synth instanceof Tone.Sampler || synth instanceof Tone.PluckSynth || synth instanceof Tone.PolySynth) {
-        synth.triggerAttack(freq, Tone.now(), vel);
-    }
+    // All our synth types support triggerAttack
+    synth?.triggerAttack(freq, Tone.now(), vel);
 }
 
 export function releaseNote(note: number) {
     if (!synth) return;
     const freq = Tone.Frequency(note, 'midi');
+    // Only call triggerRelease on synths that have it (not PluckSynth)
     if (synth instanceof Tone.PolySynth || synth instanceof Tone.Sampler) {
         synth.triggerRelease(freq, Tone.now());
     }
@@ -146,7 +146,10 @@ export function stopPlaying() {
         playbackPart = null;
     }
     if (synth) {
-        synth.releaseAll();
+        // releaseAll works for PolySynth and Sampler
+        if (synth instanceof Tone.PolySynth || synth instanceof Tone.Sampler) {
+            synth.releaseAll();
+        }
     }
     
     Tone.Transport.stop();
