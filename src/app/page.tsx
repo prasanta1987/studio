@@ -285,9 +285,10 @@ export default function Home() {
         const pitch = pitchDetector.current(fftData);
         if (pitch) {
           const midi = Tone.Frequency(pitch, 'hz').toMidi();
-          if (midi !== detectedNote) {
-            setDetectedNote(Math.round(midi));
-          }
+          setDetectedNote(prevNote => {
+            const newNote = Math.round(midi);
+            return newNote !== prevNote ? newNote : prevNote;
+          });
         } else {
           setDetectedNote(null);
         }
